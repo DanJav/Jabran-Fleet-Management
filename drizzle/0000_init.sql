@@ -145,7 +145,11 @@ ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 -- For now, allow authenticated users full access (app-level auth handles role checks)
 -- In production, add granular RLS policies per role
 CREATE POLICY "Allow authenticated access" ON vehicles FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated access" ON drivers FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Restrict drivers table to prevent role escalation by authenticated users
+CREATE POLICY "drivers_select_authenticated" ON drivers FOR SELECT TO authenticated USING (true);
+CREATE POLICY "drivers_insert_self_driver_only" ON drivers FOR INSERT TO authenticated WITH CHECK (auth.uid() = auth_user_id AND role = 'driver');
+CREATE POLICY "drivers_update_self_no_role_escalation" ON drivers FOR UPDATE TO authenticated USING (auth.uid() = auth_user_id) WITH CHECK (auth.uid() = auth_user_id AND role = 'driver');
+CREATE POLICY "drivers_delete_self" ON drivers FOR DELETE TO authenticated USING (auth.uid() = auth_user_id);
 CREATE POLICY "Allow authenticated access" ON vehicle_assignments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated access" ON mileage_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated access" ON service_events FOR ALL TO authenticated USING (true) WITH CHECK (true);
