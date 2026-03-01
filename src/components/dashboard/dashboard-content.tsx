@@ -27,10 +27,10 @@ export function DashboardContent({
     <div className="space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-lg font-semibold text-gray-900">
+        <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
           {isDriver ? "Mina fordon" : "Översikt"}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-[13px] text-gray-500 mt-1">
           {isDriver ? "Status för dina tilldelade fordon" : "Fordonsflottans status"}
         </p>
       </div>
@@ -70,7 +70,7 @@ export function DashboardContent({
       {/* Vehicle table (desktop) */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-gray-700">
+          <CardTitle className="text-[13px] font-medium text-gray-700">
             {isDriver ? "Fordon" : "Alla fordon"}
           </CardTitle>
         </CardHeader>
@@ -230,11 +230,11 @@ function SummaryCard({
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-md bg-gray-50 p-2">
+          <div className="rounded-lg bg-gray-50 p-2">
             <Icon className={`h-4 w-4 ${iconColor}`} />
           </div>
           <div>
-            <p className="text-xs text-gray-500">{label}</p>
+            <p className="text-[11px] font-medium text-gray-500 tracking-wide">{label}</p>
             <p className={`text-xl font-semibold tabular-nums ${valueColor || "text-gray-900"}`}>
               {value}
             </p>

@@ -55,15 +55,15 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 lg:hidden rounded-md p-2 bg-white border border-gray-200 shadow-sm"
+        className="fixed top-4 left-4 z-50 lg:hidden rounded-lg p-2 bg-white border border-gray-200/80 shadow-sm"
       >
-        <Menu className="h-5 w-5 text-gray-700" />
+        <Menu className="h-5 w-5 text-gray-600" />
       </button>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -71,7 +71,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-gray-200 bg-white transition-all duration-200",
+          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-gray-200/80 bg-white transition-all duration-200",
           collapsed ? "w-16" : "w-60",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -89,7 +89,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
               if (mobileOpen) setMobileOpen(false);
               else setCollapsed(!collapsed);
             }}
-            className="rounded-md p-1 hover:bg-gray-100 hidden lg:block"
+            className="rounded-lg p-1 hover:bg-gray-100 hidden lg:block"
           >
             <ChevronLeft
               className={cn(
@@ -100,7 +100,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
           </button>
           <button
             onClick={() => setMobileOpen(false)}
-            className="rounded-md p-1 hover:bg-gray-100 lg:hidden"
+            className="rounded-lg p-1 hover:bg-gray-100 lg:hidden"
           >
             <X className="h-4 w-4 text-gray-500" />
           </button>
@@ -117,10 +117,10 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150",
                   isActive
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-gray-900 text-white shadow-xs"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
