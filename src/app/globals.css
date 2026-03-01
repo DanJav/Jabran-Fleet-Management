@@ -1,10 +1,25 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #fcfcfc;
-  --color-foreground: #202020;
+  --color-background: #fafafa;
+  --color-foreground: #171717;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #737373;
+  --color-border: #e5e5e5;
+  --color-border-subtle: #f0f0f0;
+  --color-ring: #a3a3a3;
+  --color-surface: #ffffff;
+  --color-surface-hover: #fafafa;
+  --color-surface-active: #f5f5f5;
+
   --font-sans: "Geist", -apple-system, system-ui, sans-serif;
   --font-mono: "Geist Mono", "SF Mono", monospace;
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.03);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.03);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-dialog: 0 16px 70px rgb(0 0 0 / 0.12);
 }
 
 body {
@@ -13,6 +28,13 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Selection */
+::selection {
+  background-color: rgb(139 92 246 / 0.15);
+  color: inherit;
 }
 
 /* Custom scrollbar */
@@ -26,10 +48,22 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d9d9d9;
+  background: #d4d4d4;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #bbbbbb;
+  background: #a3a3a3;
+}
+
+/* Focus-visible global defaults */
+*:focus-visible {
+  outline: none;
+}
+
+/* Smooth transitions on interactive elements */
+button, a, input, select, textarea {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

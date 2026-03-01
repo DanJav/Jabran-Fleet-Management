@@ -2,9 +2,9 @@ import { cn } from "@/lib/utils";
 import type { ServiceStatus } from "@/lib/utils";
 
 const statusColors: Record<ServiceStatus, string> = {
-  upcoming: "bg-emerald-500",
-  due_soon: "bg-amber-500",
-  overdue: "bg-red-500",
+  upcoming: "bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.15)]",
+  due_soon: "bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.15)]",
+  overdue: "bg-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.15)]",
 };
 
 const statusLabels: Record<ServiceStatus, string> = {

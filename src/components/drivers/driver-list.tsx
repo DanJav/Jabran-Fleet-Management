@@ -93,8 +93,8 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">Förare</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-lg font-semibold text-gray-900 tracking-tight">Förare</h1>
+          <p className="text-[13px] text-gray-500 mt-1">
             Hantera förarkonton ({drivers.length} förare)
           </p>
         </div>
@@ -112,7 +112,7 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               {error && (
-                <p className="text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</p>
+                <p className="text-[13px] text-red-600 bg-red-50 rounded-lg px-3 py-2 ring-1 ring-red-200/60">{error}</p>
               )}
               <div className="space-y-2">
                 <Label>Namn *</Label>

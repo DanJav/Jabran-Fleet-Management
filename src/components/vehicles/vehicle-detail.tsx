@@ -114,10 +114,10 @@ export function VehicleDetail({
             </Button>
           </Link>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">
+            <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
               {vehicle.registrationNumber}
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-[13px] text-gray-500">
               {vehicle.make} {vehicle.model} {vehicle.modelYear}
               {vehicle.color && ` · ${vehicle.color}`}
             </p>
@@ -428,9 +428,9 @@ export function VehicleDetail({
 
 function DetailRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
-    <div className="flex justify-between py-1 border-b border-gray-50 last:border-0">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-medium text-gray-900">{value || "—"}</span>
+    <div className="flex justify-between py-1.5 border-b border-gray-100/80 last:border-0">
+      <span className="text-[13px] text-gray-500">{label}</span>
+      <span className="text-[13px] font-medium text-gray-900">{value || "—"}</span>
     </div>
   );
 }
@@ -450,11 +450,11 @@ function StatusCard({
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-gray-500">{label}</span>
+          <span className="text-[11px] font-medium text-gray-500 tracking-wide">{label}</span>
           <StatusDot status={status} />
         </div>
-        <p className="text-sm font-semibold text-gray-900">{value}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{sublabel}</p>
+        <p className="text-[13px] font-semibold text-gray-900">{value}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">{sublabel}</p>
       </CardContent>
     </Card>
   );
@@ -521,7 +521,7 @@ function LogMileageDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</p>
+            <p className="text-[13px] text-red-600 bg-red-50 rounded-lg px-3 py-2 ring-1 ring-red-200/60">{error}</p>
           )}
           <div className="space-y-2">
             <Label>Ny mätarställning (km)</Label>
@@ -615,7 +615,7 @@ function LogServiceDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</p>
+            <p className="text-[13px] text-red-600 bg-red-50 rounded-lg px-3 py-2 ring-1 ring-red-200/60">{error}</p>
           )}
           <div className="space-y-2">
             <Label>Servicetyp</Label>
@@ -749,7 +749,7 @@ function LogInspectionDialog({ vehicleId }: { vehicleId: string }) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</p>
+            <p className="text-[13px] text-red-600 bg-red-50 rounded-lg px-3 py-2 ring-1 ring-red-200/60">{error}</p>
           )}
           <div className="space-y-2">
             <Label>Typ</Label>
@@ -886,7 +886,7 @@ function AssignDriverDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</p>
+            <p className="text-[13px] text-red-600 bg-red-50 rounded-lg px-3 py-2 ring-1 ring-red-200/60">{error}</p>
           )}
           {availableDrivers.length === 0 ? (
             <p className="text-sm text-gray-500">
@@ -915,7 +915,7 @@ function AssignDriverDialog({
                   id="isPrimary"
                   checked={isPrimary}
                   onChange={(e) => setIsPrimary(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
+                  className="h-4 w-4 rounded-md border-gray-300 text-gray-900 focus:ring-gray-900/10"
                 />
                 <Label htmlFor="isPrimary">Primär förare</Label>
               </div>

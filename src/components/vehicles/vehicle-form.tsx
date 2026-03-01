@@ -97,7 +97,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg bg-red-50 border border-red-200/60 px-4 py-3 text-[13px] text-red-700 ring-1 ring-red-200/40">
           {error}
         </div>
       )}
@@ -276,7 +276,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
           <textarea
             value={form.notes}
             onChange={(e) => updateField("notes", e.target.value)}
-            className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-400"
+            className="flex min-h-[80px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-xs placeholder:text-gray-400 hover:border-gray-300 focus-visible:outline-none focus-visible:border-gray-400 focus-visible:ring-2 focus-visible:ring-gray-900/5 transition-all duration-150"
             placeholder="Valfria anteckningar..."
           />
         </CardContent>
