@@ -86,7 +86,6 @@ export function Sidebar({ userRole, userName, collapsed, onCollapsedChange }: Si
         <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
           {!collapsed && (
             <Link href="/dashboard" className="flex items-center gap-2">
-              <Car className="h-5 w-5 text-violet-600" />
               <span className="font-semibold text-gray-900 text-sm">TaxiFleet</span>
             </Link>
           )}
