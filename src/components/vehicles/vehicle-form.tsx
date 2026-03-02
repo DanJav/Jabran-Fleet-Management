@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,50 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupMessage, setLookupMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const handleLookup = async () => {
+    if (!form.registrationNumber.trim()) return;
+    setLookupLoading(true);
+    setLookupMessage(null);
+
+    try {
+      const res = await fetch(
+        `/api/vehicles/lookup?plate=${encodeURIComponent(form.registrationNumber.trim())}`
+      );
+      const data = await res.json();
+
+      if (res.ok) {
+        setForm((prev) => ({
+          ...prev,
+          make: data.make || prev.make,
+          model: data.model || prev.model,
+          modelYear: data.modelYear?.toString() || prev.modelYear,
+          color: data.color || prev.color,
+          fuelType: data.fuelType || prev.fuelType,
+          vin: data.vin || prev.vin,
+        }));
+        setLookupMessage({ type: "success", text: "Fordonsdata hämtad!" });
+      } else {
+        setLookupMessage({
+          type: "error",
+          text: data.error || "Kunde inte hämta data",
+        });
+      }
+    } catch {
+      setLookupMessage({
+        type: "error",
+        text: "Nätverksfel vid uppslagning",
+      });
+    }
+
+    setLookupLoading(false);
+  };
 
   const [form, setForm] = useState({
     registrationNumber: vehicle?.registrationNumber ?? "",
@@ -111,14 +156,42 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="regNr">Registreringsnummer *</Label>
-              <Input
-                id="regNr"
-                value={form.registrationNumber}
-                onChange={(e) => updateField("registrationNumber", e.target.value)}
-                placeholder="ABC123"
-                required
-                className="uppercase"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="regNr"
+                  value={form.registrationNumber}
+                  onChange={(e) =>
+                    updateField("registrationNumber", e.target.value)
+                  }
+                  placeholder="ABC123"
+                  required
+                  className="uppercase"
+                />
+                {!vehicle && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleLookup}
+                    disabled={
+                      lookupLoading || !form.registrationNumber.trim()
+                    }
+                  >
+                    {lookupLoading ? (
+                      <Search className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    <span className="ml-1">Slå upp</span>
+                  </Button>
+                )}
+              </div>
+              {lookupMessage && (
+                <p
+                  className={`text-[12px] ${lookupMessage.type === "success" ? "text-emerald-600" : "text-amber-600"}`}
+                >
+                  {lookupMessage.text}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="vin">VIN / Chassinr</Label>
