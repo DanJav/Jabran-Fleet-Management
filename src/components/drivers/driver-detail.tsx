@@ -33,8 +33,8 @@ interface CurrentAssignment {
   assignedAt: Date;
   vehicleId: string;
   registrationNumber: string;
-  make: string;
-  model: string;
+  make: string | null;
+  model: string | null;
 }
 
 interface PastAssignment extends CurrentAssignment {
