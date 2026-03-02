@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { vehicles, serviceEvents, inspections, mileageLogs, vehicleAssignments, drivers } from "@/db/schema";
+import { vehicles, serviceEvents, inspections, mileageLogs, vehicleAssignments, drivers, notes as notesTable } from "@/db/schema";
 import { eq, desc, and, isNull } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
@@ -45,6 +45,21 @@ export default async function VehicleDetailPage({
     .orderBy(desc(mileageLogs.loggedAt))
     .limit(50);
 
+  // Get notes
+  const vehicleNotes = await db
+    .select({
+      id: notesTable.id,
+      content: notesTable.content,
+      tag: notesTable.tag,
+      createdAt: notesTable.createdAt,
+      authorId: notesTable.authorId,
+      authorName: drivers.name,
+    })
+    .from(notesTable)
+    .leftJoin(drivers, eq(notesTable.authorId, drivers.id))
+    .where(eq(notesTable.vehicleId, id))
+    .orderBy(desc(notesTable.createdAt));
+
   // Get assigned drivers
   const assignments = await db
     .select({
@@ -79,6 +94,7 @@ export default async function VehicleDetailPage({
       mileageHistory={mileageHistory}
       assignments={assignments}
       allDrivers={allDrivers}
+      vehicleNotes={vehicleNotes}
       isAdmin={user.role === "admin"}
     />
   );

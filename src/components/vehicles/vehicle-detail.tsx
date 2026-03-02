@@ -9,6 +9,7 @@ import {
   Wrench,
   ClipboardCheck,
   UserPlus,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +63,14 @@ interface VehicleDetailProps {
     driverName: string;
     driverEmail: string;
   }[];
+  vehicleNotes: {
+    id: string;
+    content: string;
+    tag: string;
+    createdAt: Date;
+    authorId: string | null;
+    authorName: string | null;
+  }[];
   allDrivers: { id: string; name: string }[];
   isAdmin: boolean;
 }
@@ -72,6 +81,7 @@ export function VehicleDetail({
   inspections,
   mileageHistory,
   assignments,
+  vehicleNotes,
   allDrivers,
   isAdmin,
 }: VehicleDetailProps) {
@@ -412,16 +422,33 @@ export function VehicleDetail({
       </Card>
 
       {/* Notes */}
-      {vehicle.notes && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Anteckningar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{vehicle.notes}</p>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-sm">Anteckningar</CardTitle>
+          <AddNoteDialog vehicleId={vehicle.id} />
+        </CardHeader>
+        <CardContent>
+          {vehicleNotes.length === 0 ? (
+            <p className="text-sm text-gray-500">Inga anteckningar</p>
+          ) : (
+            <div className="space-y-3">
+              {vehicleNotes.map((note) => (
+                <div key={note.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant={note.tag === "issue" ? "danger" : note.tag === "maintenance" ? "warning" : "default"}>
+                      {note.tag === "issue" ? "Problem" : note.tag === "maintenance" ? "Underhåll" : "Allmänt"}
+                    </Badge>
+                    <span className="text-[11px] text-gray-400">
+                      {note.authorName || "Okänd"} · {formatDate(note.createdAt)}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-gray-700">{note.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -821,6 +848,88 @@ function LogInspectionDialog({ vehicleId }: { vehicleId: string }) {
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Sparar..." : "Spara besiktning"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddNoteDialog({ vehicleId }: { vehicleId: string }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [content, setContent] = useState("");
+  const [tag, setTag] = useState<"general" | "issue" | "maintenance">("general");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const res = await fetch(`/api/vehicles/${vehicleId}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, tag }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || "Något gick fel");
+      setLoading(false);
+      return;
+    }
+
+    setOpen(false);
+    setContent("");
+    setTag("general");
+    setLoading(false);
+    router.refresh();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <MessageSquare className="h-4 w-4 mr-1" />
+          Ny anteckning
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Ny anteckning</DialogTitle>
+          <DialogDescription>Lägg till en anteckning för detta fordon</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <p className="text-[13px] text-red-600 bg-red-50 rounded-lg px-3 py-2 ring-1 ring-red-200/60">{error}</p>
+          )}
+          <div className="space-y-2">
+            <Label>Kategori</Label>
+            <Select value={tag} onValueChange={(v) => setTag(v as "general" | "issue" | "maintenance")}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">Allmänt</SelectItem>
+                <SelectItem value="issue">Problem</SelectItem>
+                <SelectItem value="maintenance">Underhåll</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Anteckning</Label>
+            <textarea
+              className="flex min-h-[80px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Skriv din anteckning..."
+              required
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={loading || !content.trim()}>
+            {loading ? "Sparar..." : "Spara anteckning"}
           </Button>
         </form>
       </DialogContent>
