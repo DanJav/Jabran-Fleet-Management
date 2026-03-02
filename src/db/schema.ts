@@ -151,16 +151,16 @@ export const activityLog = pgTable("activity_log", {
 export const settings = pgTable("settings", {
   id: uuid("id").defaultRandom().primaryKey(),
   companyName: varchar("company_name", { length: 200 }).default("").notNull(),
+  organisationsnummer: varchar("organisationsnummer", { length: 50 }).default("").notNull(),
+  contactEmail: varchar("contact_email", { length: 200 }),
+  serviceIntervalA: integer("service_interval_a").default(15000).notNull(),
+  serviceIntervalB: integer("service_interval_b").default(30000).notNull(),
   notifyEmailEnabled: boolean("notify_email_enabled").default(false).notNull(),
+  notifyOverdueService: boolean("notify_overdue_service").default(false).notNull(),
   notifyEmail: varchar("notify_email", { length: 200 }),
-  // Mileage thresholds (km remaining)
-  thresholdServiceWarning: integer("threshold_service_warning").default(3000).notNull(),
-  thresholdServiceCritical: integer("threshold_service_critical").default(1000).notNull(),
-  // Date thresholds (days remaining)
-  thresholdInspectionWarning: integer("threshold_inspection_warning").default(30).notNull(),
-  thresholdInspectionCritical: integer("threshold_inspection_critical").default(14).notNull(),
-  // Email digest frequency
+  warningThresholdDays: integer("warning_threshold_days").default(30).notNull(),
   emailDigestFrequency: varchar("email_digest_frequency", { length: 20 }).default("weekly").notNull(),
+  language: varchar("language", { length: 10 }).default("sv").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
