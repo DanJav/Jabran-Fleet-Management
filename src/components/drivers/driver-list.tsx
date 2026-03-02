@@ -70,7 +70,12 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error || "Något gick fel");
+      const fieldErrors = data.details?.fieldErrors
+        ? Object.entries(data.details.fieldErrors)
+            .map(([f, msgs]) => `${f}: ${(msgs as string[]).join(", ")}`)
+            .join("; ")
+        : data.details?.formErrors?.join("; ");
+      setError(fieldErrors || data.error || "Något gick fel");
       setLoading(false);
       return;
     }
