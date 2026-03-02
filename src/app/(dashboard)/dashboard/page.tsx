@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { vehicles, serviceEvents, inspections, vehicleAssignments, drivers } from "@/db/schema";
-import { eq, desc, isNull, and } from "drizzle-orm";
+import { eq, desc, isNull, and, inArray } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
@@ -32,94 +32,112 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  // For drivers, show only their assigned vehicles
   const isDriver = user.role === "driver";
 
+  // Single query to get all vehicles
   const allVehicles = await db.select().from(vehicles).orderBy(vehicles.registrationNumber);
+  const vehicleIds = allVehicles.map((v) => v.id);
 
-  const vehiclesWithStatus: VehicleWithStatus[] = [];
+  if (vehicleIds.length === 0) {
+    return (
+      <DashboardContent
+        vehicles={[]}
+        totalActive={0}
+        overdueCount={0}
+        dueSoonCount={0}
+        nextDeadline={null}
+        isDriver={isDriver}
+      />
+    );
+  }
 
-  for (const vehicle of allVehicles) {
-    // If driver, check assignment
-    if (isDriver) {
-      const assignment = await db
-        .select()
-        .from(vehicleAssignments)
-        .where(
-          and(
-            eq(vehicleAssignments.vehicleId, vehicle.id),
-            eq(vehicleAssignments.driverId, user.id),
-            isNull(vehicleAssignments.unassignedAt)
-          )
-        )
-        .limit(1);
-      if (assignment.length === 0) continue;
-    }
-
-    // Get last service events
-    const [lastServiceA] = await db
+  // Batch-fetch all related data in parallel (4 queries instead of 5*N)
+  const [allServices, allInspections, allAssignments] = await Promise.all([
+    db
       .select()
       .from(serviceEvents)
-      .where(and(eq(serviceEvents.vehicleId, vehicle.id), eq(serviceEvents.serviceType, "A")))
-      .orderBy(desc(serviceEvents.mileageAtService))
-      .limit(1);
-
-    const [lastServiceB] = await db
-      .select()
-      .from(serviceEvents)
-      .where(and(eq(serviceEvents.vehicleId, vehicle.id), eq(serviceEvents.serviceType, "B")))
-      .orderBy(desc(serviceEvents.mileageAtService))
-      .limit(1);
-
-    // Get latest inspections
-    const [lastBesiktning] = await db
+      .where(inArray(serviceEvents.vehicleId, vehicleIds))
+      .orderBy(desc(serviceEvents.mileageAtService)),
+    db
       .select()
       .from(inspections)
-      .where(and(eq(inspections.vehicleId, vehicle.id), eq(inspections.inspectionType, "besiktning")))
-      .orderBy(desc(inspections.date))
-      .limit(1);
-
-    const [lastTaxameter] = await db
-      .select()
-      .from(inspections)
-      .where(and(eq(inspections.vehicleId, vehicle.id), eq(inspections.inspectionType, "taxameter")))
-      .orderBy(desc(inspections.date))
-      .limit(1);
-
-    // Get assigned driver
-    const [assignment] = await db
-      .select({ driver: drivers })
+      .where(inArray(inspections.vehicleId, vehicleIds))
+      .orderBy(desc(inspections.date)),
+    db
+      .select({
+        vehicleId: vehicleAssignments.vehicleId,
+        driverId: vehicleAssignments.driverId,
+        isPrimary: vehicleAssignments.isPrimary,
+        driverName: drivers.name,
+      })
       .from(vehicleAssignments)
       .innerJoin(drivers, eq(vehicleAssignments.driverId, drivers.id))
       .where(
         and(
-          eq(vehicleAssignments.vehicleId, vehicle.id),
-          eq(vehicleAssignments.isPrimary, true),
+          inArray(vehicleAssignments.vehicleId, vehicleIds),
           isNull(vehicleAssignments.unassignedAt)
         )
-      )
-      .limit(1);
+      ),
+  ]);
+
+  // Index by vehicleId for O(1) lookups
+  const serviceAByVehicle = new Map<string, number>();
+  const serviceBByVehicle = new Map<string, number>();
+  for (const s of allServices) {
+    if (s.serviceType === "A" && !serviceAByVehicle.has(s.vehicleId)) {
+      serviceAByVehicle.set(s.vehicleId, s.mileageAtService);
+    }
+    if (s.serviceType === "B" && !serviceBByVehicle.has(s.vehicleId)) {
+      serviceBByVehicle.set(s.vehicleId, s.mileageAtService);
+    }
+  }
+
+  const besiktningByVehicle = new Map<string, string>();
+  const taxameterByVehicle = new Map<string, string>();
+  for (const i of allInspections) {
+    if (i.inspectionType === "besiktning" && !besiktningByVehicle.has(i.vehicleId)) {
+      besiktningByVehicle.set(i.vehicleId, i.nextDueDate);
+    }
+    if (i.inspectionType === "taxameter" && !taxameterByVehicle.has(i.vehicleId)) {
+      taxameterByVehicle.set(i.vehicleId, i.nextDueDate);
+    }
+  }
+
+  const driverByVehicle = new Map<string, string>();
+  const driverAssignedVehicles = new Set<string>();
+  for (const a of allAssignments) {
+    if (a.isPrimary && !driverByVehicle.has(a.vehicleId)) {
+      driverByVehicle.set(a.vehicleId, a.driverName);
+    }
+    if (isDriver && a.driverId === user.id) {
+      driverAssignedVehicles.add(a.vehicleId);
+    }
+  }
+
+  // Build vehicle status list
+  const vehiclesWithStatus: VehicleWithStatus[] = [];
+
+  for (const vehicle of allVehicles) {
+    if (isDriver && !driverAssignedVehicles.has(vehicle.id)) continue;
 
     const serviceA = calculateServiceA(
       vehicle.currentMileage,
-      lastServiceA?.mileageAtService ?? null
+      serviceAByVehicle.get(vehicle.id) ?? null
     );
     const serviceB = calculateServiceB(
       vehicle.currentMileage,
-      lastServiceB?.mileageAtService ?? null
+      serviceBByVehicle.get(vehicle.id) ?? null
     );
 
-    const besiktningDays = lastBesiktning?.nextDueDate
-      ? daysUntil(lastBesiktning.nextDueDate)
-      : -1;
-    const taxameterDays = lastTaxameter?.nextDueDate
-      ? daysUntil(lastTaxameter.nextDueDate)
-      : -1;
+    const besiktningNextDate = besiktningByVehicle.get(vehicle.id) ?? null;
+    const taxameterNextDate = taxameterByVehicle.get(vehicle.id) ?? null;
 
-    const besiktningStatus = lastBesiktning ? getDateStatus(besiktningDays) : "overdue" as ServiceStatus;
-    const taxameterStatus = lastTaxameter ? getDateStatus(taxameterDays) : "overdue" as ServiceStatus;
+    const besiktningDays = besiktningNextDate ? daysUntil(besiktningNextDate) : -1;
+    const taxameterDays = taxameterNextDate ? daysUntil(taxameterNextDate) : -1;
 
-    // Determine worst status
+    const besiktningStatus = besiktningNextDate ? getDateStatus(besiktningDays) : "overdue" as ServiceStatus;
+    const taxameterStatus = taxameterNextDate ? getDateStatus(taxameterDays) : "overdue" as ServiceStatus;
+
     const statuses = [serviceA.status, serviceB.status, besiktningStatus, taxameterStatus];
     const worstStatus: ServiceStatus = statuses.includes("overdue")
       ? "overdue"
@@ -134,22 +152,22 @@ export default async function DashboardPage() {
       model: vehicle.model,
       currentMileage: vehicle.currentMileage,
       isActive: vehicle.isActive,
-      driverName: assignment?.driver?.name ?? null,
+      driverName: driverByVehicle.get(vehicle.id) ?? null,
       serviceAStatus: serviceA.status,
       serviceAKmRemaining: serviceA.km_remaining,
       serviceBStatus: serviceB.status,
       serviceBKmRemaining: serviceB.km_remaining,
       besiktningStatus,
       besiktningDaysRemaining: besiktningDays,
-      besiktningNextDate: lastBesiktning?.nextDueDate ?? null,
+      besiktningNextDate,
       taxameterStatus,
       taxameterDaysRemaining: taxameterDays,
-      taxameterNextDate: lastTaxameter?.nextDueDate ?? null,
+      taxameterNextDate,
       worstStatus,
     });
   }
 
-  // Sort: overdue first, then due_soon, then upcoming
+  // Sort: active first, then by worst status
   const statusOrder: Record<ServiceStatus, number> = { overdue: 0, due_soon: 1, upcoming: 2 };
   vehiclesWithStatus.sort((a, b) => {
     if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;

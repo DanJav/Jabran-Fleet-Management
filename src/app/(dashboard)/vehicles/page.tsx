@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { vehicles, vehicleAssignments, drivers } from "@/db/schema";
-import { eq, isNull, and } from "drizzle-orm";
+import { eq, isNull, and, inArray } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth";
 import { VehicleList } from "@/components/vehicles/vehicle-list";
 
@@ -12,28 +12,32 @@ export default async function VehiclesPage() {
     .from(vehicles)
     .orderBy(vehicles.registrationNumber);
 
-  // Get primary driver for each vehicle
-  const vehiclesWithDrivers = await Promise.all(
-    allVehicles.map(async (vehicle) => {
-      const [assignment] = await db
-        .select({ driverName: drivers.name })
+  const vehicleIds = allVehicles.map((v) => v.id);
+
+  // Single batch query for all primary driver assignments
+  const assignments = vehicleIds.length > 0
+    ? await db
+        .select({
+          vehicleId: vehicleAssignments.vehicleId,
+          driverName: drivers.name,
+        })
         .from(vehicleAssignments)
         .innerJoin(drivers, eq(vehicleAssignments.driverId, drivers.id))
         .where(
           and(
-            eq(vehicleAssignments.vehicleId, vehicle.id),
+            inArray(vehicleAssignments.vehicleId, vehicleIds),
             eq(vehicleAssignments.isPrimary, true),
             isNull(vehicleAssignments.unassignedAt)
           )
         )
-        .limit(1);
+    : [];
 
-      return {
-        ...vehicle,
-        driverName: assignment?.driverName ?? null,
-      };
-    })
-  );
+  const driverByVehicle = new Map(assignments.map((a) => [a.vehicleId, a.driverName]));
+
+  const vehiclesWithDrivers = allVehicles.map((vehicle) => ({
+    ...vehicle,
+    driverName: driverByVehicle.get(vehicle.id) ?? null,
+  }));
 
   return <VehicleList vehicles={vehiclesWithDrivers} />;
 }
