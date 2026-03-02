@@ -61,7 +61,7 @@ interface VehicleDetailProps {
     assignedAt: Date;
     driverId: string;
     driverName: string;
-    driverEmail: string;
+    driverEmail: string | null;
   }[];
   vehicleNotes: {
     id: string;

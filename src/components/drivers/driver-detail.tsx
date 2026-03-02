@@ -68,7 +68,7 @@ export function DriverDetail({
 
   // Edit form state
   const [name, setName] = useState(driver.name);
-  const [email, setEmail] = useState(driver.email);
+  const [email, setEmail] = useState(driver.email ?? "");
   const [phone, setPhone] = useState(driver.phone ?? "");
   const [role, setRole] = useState<"admin" | "driver">(driver.role);
   const [isActive, setIsActive] = useState(driver.isActive);
