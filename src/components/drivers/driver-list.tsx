@@ -42,7 +42,9 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<"admin" | "driver">("driver");
   const [loading, setLoading] = useState(false);
@@ -58,7 +60,9 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
-        email,
+        username: username || undefined,
+        email: email || undefined,
+        password,
         phone: phone || undefined,
         role,
       }),
@@ -73,7 +77,9 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
 
     setDialogOpen(false);
     setName("");
+    setUsername("");
     setEmail("");
+    setPassword("");
     setPhone("");
     setRole("driver");
     setLoading(false);
@@ -115,14 +121,45 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
                   placeholder="Anna Andersson"
                 />
               </div>
+              {/* Username — required for drivers */}
+              {role === "driver" && (
+                <div className="space-y-2">
+                  <Label>Användarnamn *</Label>
+                  <Input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required={role === "driver"}
+                    placeholder="anna.andersson"
+                    autoComplete="off"
+                  />
+                  <p className="text-[11px] text-gray-400">
+                    Används för inloggning. Endast bokstäver, siffror, _, ., -
+                  </p>
+                </div>
+              )}
+
+              {/* Email — required for admins, optional for drivers */}
               <div className="space-y-2">
-                <Label>E-post *</Label>
+                <Label>E-post {role === "admin" ? "*" : "(valfritt)"}</Label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
+                  required={role === "admin"}
                   placeholder="anna@example.se"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <Label>Lösenord *</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Minst 6 tecken"
+                  autoComplete="new-password"
                 />
               </div>
               <div className="space-y-2">
@@ -168,7 +205,7 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Namn</TableHead>
-                      <TableHead>E-post</TableHead>
+                      <TableHead>Användarnamn / E-post</TableHead>
                       <TableHead>Telefon</TableHead>
                       <TableHead>Roll</TableHead>
                       <TableHead>Fordon</TableHead>
@@ -183,7 +220,7 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
                         onClick={() => router.push(`/drivers/${driver.id}`)}
                       >
                         <TableCell className="font-medium">{driver.name}</TableCell>
-                        <TableCell className="text-gray-500">{driver.email}</TableCell>
+                        <TableCell className="text-gray-500">{driver.username ?? driver.email ?? "—"}</TableCell>
                         <TableCell className="text-gray-500">{driver.phone || "—"}</TableCell>
                         <TableCell>
                           <Badge variant={driver.role === "admin" ? "accent" : "default"}>
@@ -227,7 +264,7 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
                         </Badge>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">{driver.email}</p>
+                    <p className="text-sm text-gray-500 mt-1">{driver.username ?? driver.email ?? "—"}</p>
                     {driver.assignedVehicles.length > 0 && (
                       <p className="text-xs text-gray-400 mt-1">
                         Fordon: {driver.assignedVehicles.map((v) => v.registrationNumber).join(", ")}
