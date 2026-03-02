@@ -61,7 +61,7 @@ export function Sidebar({ userRole, userName, collapsed, onCollapsedChange }: Si
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 lg:hidden rounded-lg p-2 bg-white border border-gray-200/80 shadow-sm"
+        className="fixed top-[10px] left-4 z-50 lg:hidden rounded-lg p-2 bg-white border border-gray-200/80 shadow-sm"
       >
         <Menu className="h-5 w-5 text-gray-600" />
       </button>

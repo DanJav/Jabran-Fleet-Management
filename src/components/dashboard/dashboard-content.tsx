@@ -79,7 +79,7 @@ export function DashboardContent({
         );
       })()}
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
             {isDriver ? "Mina fordon" : "Översikt"}
@@ -89,7 +89,7 @@ export function DashboardContent({
           </p>
         </div>
         {!isDriver && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
@@ -97,43 +97,46 @@ export function DashboardContent({
                 window.location.href = "/api/export/csv";
               }}
             >
-              <Download className="h-4 w-4 mr-1" />
-              Exportera CSV
+              <Download className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Exportera CSV</span>
             </Button>
             <Link href="/vehicles/import">
               <Button variant="outline" size="sm">
-                <Upload className="h-4 w-4 mr-1" />
-                Importera
+                <Upload className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Importera</span>
               </Button>
             </Link>
           </div>
         )}
       </div>
 
-      {/* Summary stat bar */}
+      {/* Summary stat bar — 2×2 on mobile, 4-col on desktop */}
       {!isDriver && (
-        <div className="flex divide-x divide-border border border-border rounded-lg overflow-hidden bg-surface">
+        <div className="grid grid-cols-2 md:grid-cols-4 border border-border rounded-lg overflow-hidden bg-surface">
           <StatCell
             label="Aktiva fordon"
             value={totalActive}
             sub={`${vehicles.filter(v => !v.isActive).length} inaktiva`}
+            className="border-r border-b md:border-b-0"
           />
           <StatCell
             label="Behöver åtgärd"
             value={dueSoonCount}
             sub="varning eller försenad"
+            className="border-b md:border-b-0 md:border-r"
           />
           <StatCell
             label="Försenade"
             value={overdueCount}
             valueColor={overdueCount > 0 ? "text-red-600" : undefined}
             sub="kräver omedelbar åtgärd"
+            className="border-r md:border-r"
           />
           <StatCell
             label="Nästa deadline"
             value={nextDeadline ? nextDeadline.value : "—"}
             valueBold
-            sub={nextDeadline ? `${nextDeadline.type} · närmaste inspektion` : "inga kommande"}
+            sub={nextDeadline ? `${nextDeadline.type} · närmaste` : "inga kommande"}
           />
         </div>
       )}
@@ -266,18 +269,22 @@ export function DashboardContent({
                 {!isDriver && vehicle.driverName && (
                   <p className="text-xs text-gray-400 mt-1">{vehicle.driverName}</p>
                 )}
-                <div className="mt-2 flex gap-3 text-xs">
+                <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                   <span className="flex items-center gap-1">
                     <StatusDot status={vehicle.serviceAStatus} showLabel={false} />
-                    A: {vehicle.serviceAKmRemaining.toLocaleString("sv-SE")} km
+                    <span className="text-gray-500">A:</span> {vehicle.serviceAKmRemaining.toLocaleString("sv-SE")} km
                   </span>
                   <span className="flex items-center gap-1">
                     <StatusDot status={vehicle.serviceBStatus} showLabel={false} />
-                    B: {vehicle.serviceBKmRemaining.toLocaleString("sv-SE")} km
+                    <span className="text-gray-500">B:</span> {vehicle.serviceBKmRemaining.toLocaleString("sv-SE")} km
                   </span>
                   <span className="flex items-center gap-1">
                     <StatusDot status={vehicle.besiktningStatus} showLabel={false} />
-                    Bes: {vehicle.besiktningNextDate ? `${vehicle.besiktningDaysRemaining}d` : "—"}
+                    <span className="text-gray-500">Bes:</span> {vehicle.besiktningNextDate ? `${vehicle.besiktningDaysRemaining}d` : "—"}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <StatusDot status={vehicle.taxameterStatus} showLabel={false} />
+                    <span className="text-gray-500">Tax:</span> {vehicle.taxameterNextDate ? `${vehicle.taxameterDaysRemaining}d` : "—"}
                   </span>
                 </div>
               </Link>
@@ -300,15 +307,17 @@ function StatCell({
   sub,
   valueColor,
   valueBold,
+  className,
 }: {
   label: string;
   value: string | number;
   sub: string;
   valueColor?: string;
   valueBold?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="flex-1 px-5 py-4">
+    <div className={`px-4 py-4 border-border ${className ?? ""}`}>
       <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground mb-1.5">
         {label}
       </p>

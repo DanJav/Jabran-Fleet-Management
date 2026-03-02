@@ -30,7 +30,7 @@ export function TopBar({ onSearchOpen, sidebarCollapsed }: TopBarProps) {
     >
       <button
         onClick={onSearchOpen}
-        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:border-gray-300 transition-colors w-48"
+        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:border-gray-300 transition-colors w-48 ml-10 lg:ml-0"
       >
         <Search className="h-3.5 w-3.5 shrink-0" />
         <span className="flex-1 text-left">Sök...</span>
