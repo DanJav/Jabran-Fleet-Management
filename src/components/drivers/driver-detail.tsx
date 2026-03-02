@@ -48,20 +48,53 @@ interface ActivityEntry {
   performedByName: string | null;
 }
 
+interface DriverReceiptRow {
+  id: string;
+  category: string;
+  amount: string | null;
+  notes: string | null;
+  fileName: string;
+  status: string;
+  adminNote: string | null;
+  submittedAt: Date;
+  registrationNumber: string | null;
+}
+
 interface DriverDetailProps {
   driver: Driver;
   currentAssignments: CurrentAssignment[];
   pastAssignments: PastAssignment[];
   activityEntries: ActivityEntry[];
+  driverReceipts: DriverReceiptRow[];
 }
 
-type Tab = "overview" | "vehicles" | "activity";
+const RECEIPT_CATEGORY_LABELS: Record<string, string> = {
+  fuel: "Bränsle",
+  parking: "Parkering",
+  tolls: "Trängselskatt",
+  repairs: "Reparationer",
+  service: "Service",
+  other: "Övrigt",
+};
+const RECEIPT_STATUS_COLORS: Record<string, "default" | "warning" | "success" | "danger"> = {
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
+};
+const RECEIPT_STATUS_LABELS: Record<string, string> = {
+  pending: "Väntar",
+  approved: "Godkänd",
+  rejected: "Nekad",
+};
+
+type Tab = "overview" | "vehicles" | "activity" | "receipts";
 
 export function DriverDetail({
   driver,
   currentAssignments,
   pastAssignments,
   activityEntries,
+  driverReceipts,
 }: DriverDetailProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
@@ -141,6 +174,10 @@ export function DriverDetail({
     { id: "overview", label: "Översikt" },
     { id: "vehicles", label: `Fordon (${currentAssignments.length})` },
     { id: "activity", label: "Aktivitetslogg" },
+    {
+      id: "receipts",
+      label: `Kvitton${driverReceipts.length > 0 ? ` (${driverReceipts.length})` : ""}`,
+    },
   ];
 
   return (
@@ -412,6 +449,47 @@ export function DriverDetail({
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Receipts Tab */}
+      {activeTab === "receipts" && (
+        <div className="space-y-3">
+          {driverReceipts.length === 0 ? (
+            <p className="text-[13px] text-gray-500 py-4">Inga kvitton inlämnade.</p>
+          ) : (
+            driverReceipts.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3"
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">
+                      {RECEIPT_CATEGORY_LABELS[r.category] ?? r.category}
+                    </span>
+                    {r.registrationNumber && (
+                      <span className="text-xs text-gray-400">
+                        · {r.registrationNumber}
+                      </span>
+                    )}
+                    {r.amount && (
+                      <span className="text-xs text-gray-400">· {r.amount} SEK</span>
+                    )}
+                  </div>
+                  {r.notes && (
+                    <p className="text-xs text-gray-500">{r.notes}</p>
+                  )}
+                  <p className="text-xs text-gray-400">
+                    {formatDate(r.submittedAt)} · {r.fileName}
+                  </p>
+                </div>
+                <Badge variant={RECEIPT_STATUS_COLORS[r.status] ?? "secondary"}>
+                  {RECEIPT_STATUS_LABELS[r.status] ?? r.status}
+                </Badge>
+              </div>
+            ))
+          )}
+        </div>
       )}
     </div>
   );

@@ -52,10 +52,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: "Övrigt",
 };
 
-const STATUS_COLORS: Record<string, "default" | "secondary" | "destructive"> = {
-  pending: "secondary",
-  approved: "default",
-  rejected: "destructive",
+const STATUS_COLORS: Record<string, "default" | "warning" | "success" | "danger"> = {
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
 };
 
 const STATUS_LABELS: Record<string, string> = {

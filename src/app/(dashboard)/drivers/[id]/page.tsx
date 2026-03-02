@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { drivers, vehicleAssignments, vehicles, activityLog } from "@/db/schema";
+import { drivers, vehicleAssignments, vehicles, activityLog, receipts } from "@/db/schema";
 import { eq, desc, and, isNull, isNotNull } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth";
 import { notFound } from "next/navigation";
@@ -77,12 +77,31 @@ export default async function DriverDetailPage({
     )
     .orderBy(desc(activityLog.createdAt));
 
+  // Receipts for this driver
+  const driverReceipts = await db
+    .select({
+      id: receipts.id,
+      category: receipts.category,
+      amount: receipts.amount,
+      notes: receipts.notes,
+      fileName: receipts.fileName,
+      status: receipts.status,
+      adminNote: receipts.adminNote,
+      submittedAt: receipts.submittedAt,
+      registrationNumber: vehicles.registrationNumber,
+    })
+    .from(receipts)
+    .leftJoin(vehicles, eq(receipts.vehicleId, vehicles.id))
+    .where(eq(receipts.driverId, id))
+    .orderBy(desc(receipts.submittedAt));
+
   return (
     <DriverDetail
       driver={driver}
       currentAssignments={currentAssignments}
       pastAssignments={pastAssignments}
       activityEntries={activityEntries}
+      driverReceipts={driverReceipts}
     />
   );
 }
