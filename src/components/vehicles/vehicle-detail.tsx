@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   UserPlus,
   MessageSquare,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +87,27 @@ export function VehicleDetail({
   isAdmin,
 }: VehicleDetailProps) {
   const router = useRouter();
+  const [togglingActive, setTogglingActive] = useState(false);
+  const [deletingVehicle, setDeletingVehicle] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleToggleActive = async () => {
+    setTogglingActive(true);
+    await fetch(`/api/vehicles/${vehicle.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: !vehicle.isActive }),
+    });
+    setTogglingActive(false);
+    router.refresh();
+  };
+
+  const handleDelete = async () => {
+    setDeletingVehicle(true);
+    const res = await fetch(`/api/vehicles/${vehicle.id}`, { method: "DELETE" });
+    setDeletingVehicle(false);
+    if (res.ok) router.push("/vehicles");
+  };
 
   // Calculate service status
   const lastServiceA = services.find((s) => s.serviceType === "A");
@@ -137,6 +159,26 @@ export function VehicleDetail({
           <Badge variant={vehicle.isActive ? "success" : "default"}>
             {vehicle.isActive ? "Aktiv" : "Inaktiv"}
           </Badge>
+          {isAdmin && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToggleActive}
+                disabled={togglingActive}
+              >
+                {vehicle.isActive ? "Inaktivera" : "Aktivera"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -509,6 +551,30 @@ export function VehicleDetail({
           )}
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Radera fordon</DialogTitle>
+            <DialogDescription>
+              Är du säker på att du vill radera <strong>{vehicle.registrationNumber}</strong>? Detta går inte att ångra och all historik tas bort permanent.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Avbryt
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletingVehicle}
+            >
+              {deletingVehicle ? "Raderar..." : "Radera fordon"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Notes */}
       <Card>

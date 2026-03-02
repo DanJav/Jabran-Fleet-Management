@@ -152,8 +152,34 @@ export async function PATCH(
       performedBy: user.id,
     });
 
-    revalidateTag("vehicles", "default");
+    revalidateTag("vehicles");
     return NextResponse.json(updated);
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id } = await params;
+
+    const [existing] = await db.select().from(vehicles).where(eq(vehicles.id, id)).limit(1);
+    if (!existing) {
+      return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
+    }
+
+    await db.delete(vehicles).where(eq(vehicles.id, id));
+
+    revalidateTag("vehicles");
+    return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
