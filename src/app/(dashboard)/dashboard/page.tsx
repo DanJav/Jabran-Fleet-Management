@@ -40,8 +40,6 @@ export default async function DashboardPage() {
   const vehiclesWithStatus: VehicleWithStatus[] = [];
 
   for (const vehicle of allVehicles) {
-    if (!vehicle.isActive) continue;
-
     // If driver, check assignment
     if (isDriver) {
       const assignment = await db
@@ -153,11 +151,42 @@ export default async function DashboardPage() {
 
   // Sort: overdue first, then due_soon, then upcoming
   const statusOrder: Record<ServiceStatus, number> = { overdue: 0, due_soon: 1, upcoming: 2 };
-  vehiclesWithStatus.sort((a, b) => statusOrder[a.worstStatus] - statusOrder[b.worstStatus]);
+  vehiclesWithStatus.sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    return statusOrder[a.worstStatus] - statusOrder[b.worstStatus];
+  });
+
+  type NextDeadline = {
+    vehicleReg: string;
+    type: string;
+    value: string;
+    daysOrKm: number;
+  } | null;
+
+  let nextDeadline: NextDeadline = null;
+
+  for (const v of vehiclesWithStatus) {
+    if (!v.isActive) continue;
+    const candidates = [
+      { type: "Service A", value: `${v.serviceAKmRemaining.toLocaleString("sv-SE")} km`, daysOrKm: v.serviceAKmRemaining, vehicleReg: v.registrationNumber },
+      { type: "Service B", value: `${v.serviceBKmRemaining.toLocaleString("sv-SE")} km`, daysOrKm: v.serviceBKmRemaining, vehicleReg: v.registrationNumber },
+    ];
+    if (v.besiktningNextDate) {
+      candidates.push({ type: "Besiktning", value: `${v.besiktningDaysRemaining} dagar`, daysOrKm: v.besiktningDaysRemaining, vehicleReg: v.registrationNumber });
+    }
+    if (v.taxameterNextDate) {
+      candidates.push({ type: "Taxameter", value: `${v.taxameterDaysRemaining} dagar`, daysOrKm: v.taxameterDaysRemaining, vehicleReg: v.registrationNumber });
+    }
+    for (const c of candidates) {
+      if (!nextDeadline || c.daysOrKm < nextDeadline.daysOrKm) {
+        nextDeadline = c;
+      }
+    }
+  }
 
   const overdueCount = vehiclesWithStatus.filter((v) => v.worstStatus === "overdue").length;
   const dueSoonCount = vehiclesWithStatus.filter((v) => v.worstStatus === "due_soon").length;
-  const totalActive = vehiclesWithStatus.length;
+  const totalActive = vehiclesWithStatus.filter((v) => v.isActive).length;
 
   return (
     <DashboardContent
@@ -165,6 +194,7 @@ export default async function DashboardPage() {
       totalActive={totalActive}
       overdueCount={overdueCount}
       dueSoonCount={dueSoonCount}
+      nextDeadline={nextDeadline ? { vehicleReg: nextDeadline.vehicleReg, type: nextDeadline.type, value: nextDeadline.value } : null}
       isDriver={isDriver}
     />
   );

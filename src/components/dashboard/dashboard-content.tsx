@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Car, AlertTriangle, Clock, CheckCircle } from "lucide-react";
+import { Car, AlertTriangle, Clock, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/ui/status-dot";
@@ -13,6 +13,11 @@ interface DashboardContentProps {
   totalActive: number;
   overdueCount: number;
   dueSoonCount: number;
+  nextDeadline: {
+    vehicleReg: string;
+    type: string;
+    value: string;
+  } | null;
   isDriver: boolean;
 }
 
@@ -21,10 +26,55 @@ export function DashboardContent({
   totalActive,
   overdueCount,
   dueSoonCount,
+  nextDeadline,
   isDriver,
 }: DashboardContentProps) {
   return (
     <div className="space-y-6">
+      {isDriver && (() => {
+        const alerts: { reg: string; item: string; status: "overdue" | "due_soon" }[] = [];
+        for (const v of vehicles) {
+          if (v.serviceAStatus === "overdue") alerts.push({ reg: v.registrationNumber, item: "Service A", status: "overdue" });
+          if (v.serviceBStatus === "overdue") alerts.push({ reg: v.registrationNumber, item: "Service B", status: "overdue" });
+          if (v.besiktningStatus === "overdue") alerts.push({ reg: v.registrationNumber, item: "Besiktning", status: "overdue" });
+          if (v.taxameterStatus === "overdue") alerts.push({ reg: v.registrationNumber, item: "Taxameter", status: "overdue" });
+          if (v.besiktningDaysRemaining >= 0 && v.besiktningDaysRemaining <= 14 && v.besiktningStatus !== "overdue")
+            alerts.push({ reg: v.registrationNumber, item: `Besiktning (${v.besiktningDaysRemaining}d)`, status: "due_soon" });
+          if (v.taxameterDaysRemaining >= 0 && v.taxameterDaysRemaining <= 14 && v.taxameterStatus !== "overdue")
+            alerts.push({ reg: v.registrationNumber, item: `Taxameter (${v.taxameterDaysRemaining}d)`, status: "due_soon" });
+          if (v.serviceAKmRemaining > 0 && v.serviceAKmRemaining <= 1000 && v.serviceAStatus !== "overdue")
+            alerts.push({ reg: v.registrationNumber, item: `Service A (${v.serviceAKmRemaining.toLocaleString("sv-SE")} km)`, status: "due_soon" });
+          if (v.serviceBKmRemaining > 0 && v.serviceBKmRemaining <= 1000 && v.serviceBStatus !== "overdue")
+            alerts.push({ reg: v.registrationNumber, item: `Service B (${v.serviceBKmRemaining.toLocaleString("sv-SE")} km)`, status: "due_soon" });
+        }
+        const overdueAlerts = alerts.filter(a => a.status === "overdue");
+        const soonAlerts = alerts.filter(a => a.status === "due_soon");
+        if (alerts.length === 0) return null;
+        return (
+          <div className="space-y-2">
+            {overdueAlerts.length > 0 && (
+              <div className="rounded-lg bg-red-50 px-4 py-3 ring-1 ring-red-200/60">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                  <p className="text-[13px] font-medium text-red-800">
+                    Försenat: {overdueAlerts.map(a => `${a.reg} — ${a.item}`).join(", ")}
+                  </p>
+                </div>
+              </div>
+            )}
+            {soonAlerts.length > 0 && (
+              <div className="rounded-lg bg-amber-50 px-4 py-3 ring-1 ring-amber-200/60">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                  <p className="text-[13px] font-medium text-amber-800">
+                    Snart: {soonAlerts.map(a => `${a.reg} — ${a.item}`).join(", ")}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
       {/* Page header */}
       <div>
         <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
@@ -58,12 +108,26 @@ export function DashboardContent({
             iconColor="text-amber-600"
             valueColor={dueSoonCount > 0 ? "text-amber-600" : undefined}
           />
-          <SummaryCard
-            icon={CheckCircle}
-            label="OK"
-            value={totalActive - overdueCount - dueSoonCount}
-            iconColor="text-emerald-600"
-          />
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-gray-50 p-2">
+                  <Calendar className="h-4 w-4 text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium text-gray-500 tracking-wide">Nästa deadline</p>
+                  {nextDeadline ? (
+                    <>
+                      <p className="text-sm font-semibold text-gray-900">{nextDeadline.type}</p>
+                      <p className="text-[11px] text-gray-400">{nextDeadline.vehicleReg} · {nextDeadline.value}</p>
+                    </>
+                  ) : (
+                    <p className="text-sm font-semibold text-gray-900">Inga kommande</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -82,6 +146,7 @@ export function DashboardContent({
                 <TableRow>
                   <TableHead>Reg.nr</TableHead>
                   <TableHead>Fordon</TableHead>
+                  <TableHead>Status</TableHead>
                   {!isDriver && <TableHead>Förare</TableHead>}
                   <TableHead className="text-right">Mätarst.</TableHead>
                   <TableHead>Service A</TableHead>
@@ -103,6 +168,11 @@ export function DashboardContent({
                     </TableCell>
                     <TableCell className="text-gray-600">
                       {vehicle.make} {vehicle.model}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={vehicle.isActive ? "success" : "default"}>
+                        {vehicle.isActive ? "Aktiv" : "Inaktiv"}
+                      </Badge>
                     </TableCell>
                     {!isDriver && (
                       <TableCell className="text-gray-500">
@@ -159,6 +229,9 @@ export function DashboardContent({
                     <span className="font-medium text-gray-900">
                       {vehicle.registrationNumber}
                     </span>
+                    {!vehicle.isActive && (
+                      <Badge variant="default">Inaktiv</Badge>
+                    )}
                     <Badge
                       variant={
                         vehicle.worstStatus === "overdue"
