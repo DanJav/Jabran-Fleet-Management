@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Car } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import type { Vehicle } from "@/db/schema";
 type VehicleWithDriver = Vehicle & { driverName: string | null };
 
 export function VehicleList({ vehicles }: { vehicles: VehicleWithDriver[] }) {
+  const router = useRouter();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -64,14 +66,15 @@ export function VehicleList({ vehicles }: { vehicles: VehicleWithDriver[] }) {
                   </TableHeader>
                   <TableBody>
                     {vehicles.map((vehicle) => (
-                      <TableRow key={vehicle.id}>
+                      <TableRow
+                        key={vehicle.id}
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => router.push(`/vehicles/${vehicle.id}`)}
+                      >
                         <TableCell>
-                          <Link
-                            href={`/vehicles/${vehicle.id}`}
-                            className="font-mono font-semibold tracking-wide text-gray-800 hover:text-violet-600"
-                          >
+                          <span className="font-mono font-semibold tracking-wide text-gray-800">
                             {vehicle.registrationNumber.slice(0, 3)}{" "}{vehicle.registrationNumber.slice(3)}
-                          </Link>
+                          </span>
                         </TableCell>
                         <TableCell className="text-gray-600">{vehicle.make || "—"}</TableCell>
                         <TableCell className="text-gray-600">{vehicle.model || "—"}</TableCell>
