@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Car, AlertTriangle, Clock, Calendar, Download, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, Clock, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ export function DashboardContent({
   nextDeadline,
   isDriver,
 }: DashboardContentProps) {
+  const router = useRouter();
   return (
     <div className="space-y-6">
       {isDriver && (() => {
@@ -108,55 +110,37 @@ export function DashboardContent({
         )}
       </div>
 
-      {/* Summary cards */}
+      {/* Summary stat bar */}
       {!isDriver && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <SummaryCard
-            icon={Car}
+        <div className="flex divide-x divide-border border border-border rounded-lg overflow-hidden bg-surface">
+          <StatCell
             label="Aktiva fordon"
             value={totalActive}
-            iconColor="text-violet-600"
+            sub={`${vehicles.filter(v => !v.isActive).length} inaktiva`}
           />
-          <SummaryCard
-            icon={AlertTriangle}
-            label="Försenade"
-            value={overdueCount}
-            iconColor="text-red-600"
-            valueColor={overdueCount > 0 ? "text-red-600" : undefined}
-          />
-          <SummaryCard
-            icon={Clock}
+          <StatCell
             label="Behöver åtgärd"
             value={dueSoonCount}
-            iconColor="text-amber-600"
-            valueColor={dueSoonCount > 0 ? "text-amber-600" : undefined}
+            sub="varning eller försenad"
           />
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-gray-50 p-2">
-                  <Calendar className="h-4 w-4 text-violet-600" />
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-gray-500 tracking-wide">Nästa deadline</p>
-                  {nextDeadline ? (
-                    <>
-                      <p className="text-sm font-semibold text-gray-900">{nextDeadline.type}</p>
-                      <p className="text-[11px] text-gray-400">{nextDeadline.vehicleReg} · {nextDeadline.value}</p>
-                    </>
-                  ) : (
-                    <p className="text-sm font-semibold text-gray-900">Inga kommande</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCell
+            label="Försenade"
+            value={overdueCount}
+            valueColor={overdueCount > 0 ? "text-red-600" : undefined}
+            sub="kräver omedelbar åtgärd"
+          />
+          <StatCell
+            label="Nästa deadline"
+            value={nextDeadline ? nextDeadline.value : "—"}
+            valueBold
+            sub={nextDeadline ? `${nextDeadline.type} · närmaste inspektion` : "inga kommande"}
+          />
         </div>
       )}
 
       {/* Vehicle table (desktop) */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="px-4 pb-3">
           <CardTitle className="text-[13px] font-medium text-gray-700">
             {isDriver ? "Fordon" : "Alla fordon"}
           </CardTitle>
@@ -180,14 +164,15 @@ export function DashboardContent({
               </TableHeader>
               <TableBody>
                 {vehicles.map((vehicle) => (
-                  <TableRow key={vehicle.id} className="cursor-pointer">
+                  <TableRow
+                    key={vehicle.id}
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => router.push(`/vehicles/${vehicle.id}`)}
+                  >
                     <TableCell>
-                      <Link
-                        href={`/vehicles/${vehicle.id}`}
-                        className="font-medium text-gray-900 hover:text-violet-600"
-                      >
-                        {vehicle.registrationNumber}
-                      </Link>
+                      <span className="font-mono font-semibold tracking-wide text-gray-800">
+                        {vehicle.registrationNumber.slice(0, 3)} {vehicle.registrationNumber.slice(3)}
+                      </span>
                     </TableCell>
                     <TableCell className="text-gray-600">
                       {vehicle.make} {vehicle.model}
@@ -309,34 +294,28 @@ export function DashboardContent({
   );
 }
 
-function SummaryCard({
-  icon: Icon,
+function StatCell({
   label,
   value,
-  iconColor,
+  sub,
   valueColor,
+  valueBold,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
   label: string;
-  value: number;
-  iconColor: string;
+  value: string | number;
+  sub: string;
   valueColor?: string;
+  valueBold?: boolean;
 }) {
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-gray-50 p-2">
-            <Icon className={`h-4 w-4 ${iconColor}`} />
-          </div>
-          <div>
-            <p className="text-[11px] font-medium text-gray-500 tracking-wide">{label}</p>
-            <p className={`text-xl font-semibold tabular-nums ${valueColor || "text-gray-900"}`}>
-              {value}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex-1 px-5 py-4">
+      <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground mb-1.5">
+        {label}
+      </p>
+      <p className={`text-2xl tabular-nums leading-none ${valueBold ? "font-semibold" : "font-normal"} ${valueColor ?? "text-foreground"}`}>
+        {value}
+      </p>
+      <p className="text-[11px] text-muted-foreground mt-1.5">{sub}</p>
+    </div>
   );
 }
