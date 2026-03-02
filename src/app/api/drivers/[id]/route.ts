@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { drivers, activityLog } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 
 const updateDriverSchema = z.object({
@@ -11,6 +12,7 @@ const updateDriverSchema = z.object({
   phone: z.string().optional().nullable(),
   role: z.enum(["admin", "driver"]).optional(),
   isActive: z.boolean().optional(),
+  password: z.string().min(6).optional(),
 });
 
 export async function GET(
@@ -72,9 +74,26 @@ export async function PATCH(
       return NextResponse.json({ error: "Driver not found" }, { status: 404 });
     }
 
+    const { password, ...dbFields } = parsed.data;
+
+    // Update password in Supabase Auth if provided
+    if (password) {
+      if (!existing.authUserId) {
+        return NextResponse.json({ error: "Driver has no linked auth account" }, { status: 400 });
+      }
+      const supabaseAdmin = createAdminClient();
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+        existing.authUserId,
+        { password }
+      );
+      if (authError) {
+        return NextResponse.json({ error: authError.message }, { status: 500 });
+      }
+    }
+
     const [updated] = await db
       .update(drivers)
-      .set(parsed.data)
+      .set(dbFields)
       .where(eq(drivers.id, id))
       .returning();
 
@@ -82,8 +101,8 @@ export async function PATCH(
     await db.insert(activityLog).values({
       entityType: "driver",
       entityId: id,
-      action: "updated",
-      changes: { old: existing, new: parsed.data },
+      action: password ? "password_reset" : "updated",
+      changes: password ? { passwordReset: true } : { old: existing, new: dbFields },
       performedBy: user.id,
     });
 

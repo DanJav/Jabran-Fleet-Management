@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { NoAccountPage } from "@/components/layout/no-account-page";
 
 export default async function DashboardLayout({
   children,
@@ -10,7 +10,10 @@ export default async function DashboardLayout({
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    // Supabase session is valid but no drivers record exists for this user.
+    // Redirecting to /login would loop (middleware sends authenticated users
+    // back to /dashboard), so render an error page instead.
+    return <NoAccountPage />;
   }
 
   return (
