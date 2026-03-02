@@ -184,7 +184,7 @@ export function DriverDetail({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
-        email,
+        email: email || undefined,
         phone: phone || null,
         role,
         isActive,
