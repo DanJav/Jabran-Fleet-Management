@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       performedBy: user.id,
     });
 
-    revalidateTag("drivers", "default");
+    revalidateTag("drivers");
     return NextResponse.json(driver, { status: 201 });
   } catch {
     return NextResponse.json(

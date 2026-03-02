@@ -237,6 +237,8 @@ export default function SettingsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="1">1 dag</SelectItem>
+              <SelectItem value="7">7 dagar</SelectItem>
               <SelectItem value="14">14 dagar</SelectItem>
               <SelectItem value="30">30 dagar</SelectItem>
               <SelectItem value="60">60 dagar</SelectItem>

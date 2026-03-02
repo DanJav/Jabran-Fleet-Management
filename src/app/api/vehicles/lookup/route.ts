@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await fetchFromCarInfo(plate);
+    const result = await fetchFromBilprovningen(plate);
     if (result) {
       return NextResponse.json(result);
     }
@@ -30,79 +30,44 @@ export async function GET(req: NextRequest) {
   }
 }
 
-async function fetchFromCarInfo(plate: string) {
-  const url = `https://www.car.info/sv-se/license-plate/S/${plate}`;
+/**
+ * Bilprovningen's booking API exposes vehicle data by plate number.
+ * Free, no auth required, returns JSON directly.
+ */
+async function fetchFromBilprovningen(plate: string) {
+  const url = `https://boka.bilprovningen.se/api/v1/booking/vehicle?registrationNumber=${encodeURIComponent(plate)}`;
 
   const res = await fetch(url, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; TaxiFleet/1.0)",
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      Accept: "application/json",
     },
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(8000),
   });
 
   if (!res.ok) return null;
 
-  const html = await res.text();
+  const data = await res.json();
 
-  const make = extractMeta(html, "make") || extractFromTitle(html, "make");
-  const model = extractMeta(html, "model") || extractFromTitle(html, "model");
-  const year = extractMeta(html, "year");
-  const color = extractFromPage(html, "Färg");
-  const fuel =
-    extractFromPage(html, "Drivmedel") || extractFromPage(html, "Bränsle");
-  const vin =
-    extractFromPage(html, "Chassinr") || extractFromPage(html, "VIN");
+  // vehicleName = make (e.g. "TOYOTA"), vehicleYear = 2022, color = "Svart"
+  if (!data.vehicleName && !data.vehicleYear) return null;
 
-  if (!make && !model) return null;
+  const make = data.vehicleName
+    ? toTitleCase(data.vehicleName as string)
+    : undefined;
+  const color = data.color ? toTitleCase(data.color as string) : undefined;
+  const year = data.vehicleYear ? Number(data.vehicleYear) : undefined;
 
   return {
     registrationNumber: plate,
-    make: make || undefined,
-    model: model || undefined,
-    modelYear: year ? parseInt(year) : undefined,
-    color: color || undefined,
-    fuelType: fuel || undefined,
-    vin: vin || undefined,
-    source: "car.info",
+    make,
+    modelYear: year,
+    color,
+    source: "bilprovningen",
   };
 }
 
-function extractMeta(html: string, field: string): string | null {
-  const jsonLdMatch = html.match(
-    /<script type="application\/ld\+json">([\s\S]*?)<\/script>/
-  );
-  if (jsonLdMatch) {
-    try {
-      const data = JSON.parse(jsonLdMatch[1]);
-      if (field === "make" && data.brand?.name) return data.brand.name;
-      if (field === "model" && data.model) return data.model;
-      if (field === "year" && data.vehicleModelDate)
-        return data.vehicleModelDate;
-    } catch {
-      // ignore parse errors
-    }
-  }
-  return null;
-}
-
-function extractFromTitle(html: string, field: string): string | null {
-  const titleMatch = html.match(/<title>(.*?)<\/title>/);
-  if (!titleMatch) return null;
-  const title = titleMatch[1];
-  const parts = title.split(/\s+/);
-  if (field === "make" && parts.length >= 1) return parts[0];
-  if (field === "model" && parts.length >= 2) return parts[1];
-  return null;
-}
-
-function extractFromPage(html: string, label: string): string | null {
-  const patterns = [
-    new RegExp(`${label}[:\\s]*</[^>]+>\\s*<[^>]+>\\s*([^<]+)`, "i"),
-    new RegExp(`>${label}<[^>]*>[^<]*<[^>]*>([^<]+)`, "i"),
-  ];
-  for (const pattern of patterns) {
-    const match = html.match(pattern);
-    if (match?.[1]?.trim()) return match[1].trim();
-  }
-  return null;
+function toTitleCase(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
