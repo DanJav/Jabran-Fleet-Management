@@ -34,11 +34,15 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
     const supabase = createClient();
     Promise.all([
       supabase.from("vehicles").select("id, registration_number, make, model").eq("is_active", true),
       supabase.from("drivers").select("id, name, email").eq("is_active", true),
     ]).then(([v, d]) => {
+      if (cancelled) return;
+      if (v.error) console.error("vehicles fetch failed", v.error);
+      if (d.error) console.error("drivers fetch failed", d.error);
       setVehicles(
         (v.data ?? []).map((r) => ({
           id: r.id,
@@ -48,10 +52,13 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         }))
       );
       setDrivers(d.data ?? []);
+      setQuery("");
+      setActiveIndex(0);
+    }).catch((err) => {
+      if (!cancelled) console.error("search fetch failed", err);
     });
-    setQuery("");
-    setActiveIndex(0);
     setTimeout(() => inputRef.current?.focus(), 0);
+    return () => { cancelled = true; };
   }, [open]);
 
   const filteredVehicles = vehicles.filter((v) => {
@@ -89,6 +96,11 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     [router, onClose]
   );
 
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    setActiveIndex(0);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -103,17 +115,10 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     }
   };
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
-
   if (!open) return null;
 
   const hasResults = allResults.length > 0;
   const showEmpty = query.length > 0 && !hasResults;
-
-  let flatIndex = 0;
-  const getIndex = () => flatIndex++;
 
   return (
     <div
@@ -131,13 +136,17 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleQueryChange}
             onKeyDown={handleKeyDown}
             placeholder="Sök fordon, förare..."
             className="flex-1 text-sm text-gray-900 placeholder:text-gray-400 outline-none bg-transparent"
           />
-          <button onClick={onClose} className="rounded p-1 hover:bg-gray-100">
-            <X className="h-4 w-4 text-gray-400" />
+          <button
+            onClick={onClose}
+            aria-label="Stäng sök"
+            className="rounded p-1 hover:bg-gray-100"
+          >
+            <X className="h-4 w-4 text-gray-400" aria-hidden="true" />
           </button>
         </div>
 
@@ -153,29 +162,26 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
               <p className="px-4 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                 Fordon
               </p>
-              {filteredVehicles.map((v) => {
-                const idx = getIndex();
-                return (
-                  <button
-                    key={v.id}
-                    onClick={() => navigate({ kind: "vehicle", item: v })}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors",
-                      activeIndex === idx && "bg-gray-100"
-                    )}
-                  >
-                    <Car className="h-4 w-4 text-gray-400 shrink-0" />
-                    <span className="text-sm font-medium text-gray-900 font-mono">
-                      {v.registrationNumber}
+              {filteredVehicles.map((v, i) => (
+                <button
+                  key={v.id}
+                  onClick={() => navigate({ kind: "vehicle", item: v })}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors",
+                    activeIndex === i && "bg-gray-100"
+                  )}
+                >
+                  <Car className="h-4 w-4 text-gray-400 shrink-0" />
+                  <span className="text-sm font-medium text-gray-900 font-mono">
+                    {v.registrationNumber}
+                  </span>
+                  {(v.make || v.model) && (
+                    <span className="text-sm text-gray-500">
+                      {[v.make, v.model].filter(Boolean).join(" ")}
                     </span>
-                    {(v.make || v.model) && (
-                      <span className="text-sm text-gray-500">
-                        {[v.make, v.model].filter(Boolean).join(" ")}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                  )}
+                </button>
+              ))}
             </div>
           )}
 
@@ -184,23 +190,20 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
               <p className="px-4 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                 Förare
               </p>
-              {filteredDrivers.map((d) => {
-                const idx = getIndex();
-                return (
-                  <button
-                    key={d.id}
-                    onClick={() => navigate({ kind: "driver", item: d })}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors",
-                      activeIndex === idx && "bg-gray-100"
-                    )}
-                  >
-                    <Users className="h-4 w-4 text-gray-400 shrink-0" />
-                    <span className="text-sm font-medium text-gray-900">{d.name}</span>
-                    <span className="text-sm text-gray-500">{d.email}</span>
-                  </button>
-                );
-              })}
+              {filteredDrivers.map((d, j) => (
+                <button
+                  key={d.id}
+                  onClick={() => navigate({ kind: "driver", item: d })}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors",
+                    activeIndex === filteredVehicles.length + j && "bg-gray-100"
+                  )}
+                >
+                  <Users className="h-4 w-4 text-gray-400 shrink-0" />
+                  <span className="text-sm font-medium text-gray-900">{d.name}</span>
+                  <span className="text-sm text-gray-500">{d.email}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
