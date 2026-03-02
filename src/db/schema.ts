@@ -24,6 +24,19 @@ export const inspectionResultEnum = pgEnum("inspection_result", [
 ]);
 export const mileageSourceEnum = pgEnum("mileage_source", ["manual", "api"]);
 export const noteTagEnum = pgEnum("note_tag", ["issue", "maintenance", "general"]);
+export const receiptCategoryEnum = pgEnum("receipt_category", [
+  "fuel",
+  "parking",
+  "tolls",
+  "repairs",
+  "service",
+  "other",
+]);
+export const receiptStatusEnum = pgEnum("receipt_status", [
+  "pending",
+  "approved",
+  "rejected",
+]);
 
 // Vehicles
 export const vehicles = pgTable("vehicles", {
@@ -147,6 +160,25 @@ export const activityLog = pgTable("activity_log", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Receipts
+export const receipts = pgTable("receipts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  driverId: uuid("driver_id")
+    .references(() => drivers.id)
+    .notNull(),
+  vehicleId: uuid("vehicle_id").references(() => vehicles.id),
+  category: receiptCategoryEnum("category").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  fileUrl: text("file_url").notNull(),
+  fileName: text("file_name").notNull(),
+  status: receiptStatusEnum("status").default("pending").notNull(),
+  adminNote: text("admin_note"),
+  reviewedBy: uuid("reviewed_by").references(() => drivers.id),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Settings (singleton row for app config)
 export const settings = pgTable("settings", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -177,3 +209,5 @@ export type ServiceEvent = typeof serviceEvents.$inferSelect;
 export type Inspection = typeof inspections.$inferSelect;
 export type Note = typeof notes.$inferSelect;
 export type ActivityLogEntry = typeof activityLog.$inferSelect;
+export type Receipt = typeof receipts.$inferSelect;
+export type NewReceipt = typeof receipts.$inferInsert;
