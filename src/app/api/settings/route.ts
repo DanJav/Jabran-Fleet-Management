@@ -7,13 +7,16 @@ import { z } from "zod";
 
 const updateSettingsSchema = z.object({
   companyName: z.string().max(200).optional(),
+  organisationsnummer: z.string().max(50).optional(),
+  contactEmail: z.string().email().optional().nullable(),
+  serviceIntervalA: z.number().int().min(0).optional(),
+  serviceIntervalB: z.number().int().min(0).optional(),
   notifyEmailEnabled: z.boolean().optional(),
+  notifyOverdueService: z.boolean().optional(),
   notifyEmail: z.string().email().optional().nullable(),
-  thresholdServiceWarning: z.number().int().min(0).optional(),
-  thresholdServiceCritical: z.number().int().min(0).optional(),
-  thresholdInspectionWarning: z.number().int().min(0).optional(),
-  thresholdInspectionCritical: z.number().int().min(0).optional(),
+  warningThresholdDays: z.number().int().min(0).optional(),
   emailDigestFrequency: z.enum(["daily", "weekly"]).optional(),
+  language: z.enum(["sv", "en"]).optional(),
 });
 
 export async function GET() {
