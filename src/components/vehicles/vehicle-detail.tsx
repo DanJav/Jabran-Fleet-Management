@@ -769,7 +769,7 @@ export function VehicleDetail({
               </TableHeader>
               <TableBody>
                 {services.map((s) => (
-                  <TableRow key={s.id}>
+                  <TableRow key={s.id} className="group">
                     <TableCell>
                       <Badge variant="default">Service {s.serviceType}</Badge>
                     </TableCell>
@@ -786,7 +786,7 @@ export function VehicleDetail({
                     </TableCell>
                     {isAdmin && (
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditService(s)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -827,7 +827,7 @@ export function VehicleDetail({
               </TableHeader>
               <TableBody>
                 {inspections.map((i) => (
-                  <TableRow key={i.id}>
+                  <TableRow key={i.id} className="group">
                     <TableCell>
                       <Badge variant="default">
                         {i.inspectionType === "besiktning"
@@ -864,7 +864,7 @@ export function VehicleDetail({
                     </TableCell>
                     {isAdmin && (
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditInspection(i)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -903,7 +903,7 @@ export function VehicleDetail({
               </TableHeader>
               <TableBody>
                 {mileageHistory.map((m) => (
-                  <TableRow key={m.id}>
+                  <TableRow key={m.id} className="group">
                     <TableCell>{formatDate(m.loggedAt)}</TableCell>
                     <TableCell className="tabular-nums">
                       {m.mileage.toLocaleString("sv-SE")} km
@@ -912,7 +912,7 @@ export function VehicleDetail({
                     <TableCell className="text-gray-500">{m.notes || "—"}</TableCell>
                     {isAdmin && (
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMileage(m)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
