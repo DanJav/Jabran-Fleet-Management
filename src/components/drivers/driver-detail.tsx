@@ -248,13 +248,19 @@ export function DriverDetail({
                   required
                 />
               </div>
+              {driver.username && (
+                <div className="space-y-2">
+                  <Label>Användarnamn</Label>
+                  <Input value={driver.username} readOnly className="bg-gray-50 text-gray-500" />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>E-post</Label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); clearSuccess(); }}
-                  required
+                  required={role === "admin"}
                 />
               </div>
               <div className="space-y-2">

@@ -18,7 +18,9 @@ export async function getCurrentUser() {
     .where(eq(drivers.authUserId, user.id))
     .limit(1);
 
-  return driver || null;
+  if (!driver || !driver.isActive) return null;
+
+  return driver;
 }
 
 export async function requireAuth() {

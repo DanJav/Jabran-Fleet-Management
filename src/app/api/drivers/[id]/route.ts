@@ -77,26 +77,32 @@ export async function PATCH(
 
     const { password, ...dbFields } = parsed.data;
 
-    // Update password in Supabase Auth if provided
-    if (password) {
+    // Sync Supabase Auth when password or isActive changes
+    const needsAuthUpdate = password || typeof dbFields.isActive === "boolean";
+    if (needsAuthUpdate) {
       if (!existing.authUserId) {
         return NextResponse.json({ error: "Driver has no linked auth account" }, { status: 400 });
       }
       const supabaseAdmin = createAdminClient();
+      const authUpdate: { password?: string; ban_duration?: string } = {};
+      if (password) authUpdate.password = password;
+      if (typeof dbFields.isActive === "boolean") {
+        // ban_duration "none" = unbanned; a long duration = effectively banned
+        authUpdate.ban_duration = dbFields.isActive ? "none" : "876600h";
+      }
       const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
         existing.authUserId,
-        { password }
+        authUpdate
       );
       if (authError) {
         return NextResponse.json({ error: authError.message }, { status: 500 });
       }
     }
 
-    const [updated] = await db
-      .update(drivers)
-      .set(dbFields)
-      .where(eq(drivers.id, id))
-      .returning();
+    const hasDbChanges = Object.keys(dbFields).length > 0;
+    const [updated] = hasDbChanges
+      ? await db.update(drivers).set(dbFields).where(eq(drivers.id, id)).returning()
+      : await db.select().from(drivers).where(eq(drivers.id, id)).limit(1);
 
     // Log activity
     await db.insert(activityLog).values({
@@ -107,9 +113,10 @@ export async function PATCH(
       performedBy: user.id,
     });
 
-    revalidateTag("drivers", "default");
+    revalidateTag("drivers");
     return NextResponse.json(updated);
-  } catch {
+  } catch (err) {
+    console.error("[PATCH /api/drivers/[id]]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
