@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { vehicles, serviceEvents, inspections, mileageLogs, vehicleAssignments, drivers, notes as notesTable } from "@/db/schema";
-import { eq, desc, and, isNull } from "drizzle-orm";
+import { vehicles, serviceEvents, inspections, mileageLogs, vehicleAssignments, drivers, notes as notesTable, activityLog } from "@/db/schema";
+import { eq, desc, and, isNull, inArray, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { VehicleDetail } from "@/components/vehicles/vehicle-detail";
@@ -102,6 +102,41 @@ export default async function VehicleDetailPage({
       .orderBy(drivers.name);
   }
 
+  // Fetch edit/delete activity for this vehicle's records
+  const entityIds = [
+    ...services.map((s) => s.id),
+    ...vehicleInspections.map((i) => i.id),
+    ...mileageHistory.map((m) => m.id),
+  ];
+  const changeLog =
+    entityIds.length > 0
+      ? await db
+          .select({
+            id: activityLog.id,
+            entityType: activityLog.entityType,
+            entityId: activityLog.entityId,
+            action: activityLog.action,
+            changes: activityLog.changes,
+            createdAt: activityLog.createdAt,
+            performedByName: drivers.name,
+          })
+          .from(activityLog)
+          .leftJoin(drivers, eq(activityLog.performedBy, drivers.id))
+          .where(
+            and(
+              inArray(activityLog.entityType, ["service_event", "inspection", "mileage_log"]),
+              inArray(activityLog.action, ["updated", "deleted"])
+            )
+          )
+          .orderBy(desc(activityLog.createdAt))
+      : [];
+  // Filter to only entries for this vehicle (by entityId match or vehicleId in changes)
+  const vehicleChangeLog = changeLog.filter(
+    (entry) =>
+      entityIds.includes(entry.entityId) ||
+      (entry.changes as Record<string, unknown>)?.vehicleId === id
+  );
+
   return (
     <VehicleDetail
       vehicle={vehicle}
@@ -112,6 +147,7 @@ export default async function VehicleDetailPage({
       allDrivers={allDrivers}
       vehicleNotes={vehicleNotes}
       isAdmin={user.role === "admin"}
+      changeLog={vehicleChangeLog}
     />
   );
 }

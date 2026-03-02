@@ -65,7 +65,7 @@ export async function PATCH(
       entityType: "service_event",
       entityId: serviceId,
       action: "updated",
-      changes: { old: existing, new: parsed.data },
+      changes: { vehicleId: existing.vehicleId, old: existing, new: parsed.data },
       performedBy: user.id,
     });
 
@@ -107,6 +107,7 @@ export async function DELETE(
       entityId: serviceId,
       action: "deleted",
       changes: {
+        vehicleId: existing.vehicleId,
         serviceType: existing.serviceType,
         date: existing.date,
         mileageAtService: existing.mileageAtService,

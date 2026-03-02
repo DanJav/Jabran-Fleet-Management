@@ -70,7 +70,7 @@ export async function PATCH(
       entityType: "inspection",
       entityId: inspectionId,
       action: "updated",
-      changes: { old: existing, new: parsed.data },
+      changes: { vehicleId: existing.vehicleId, old: existing, new: parsed.data },
       performedBy: user.id,
     });
 
@@ -115,7 +115,7 @@ export async function DELETE(
       entityType: "inspection",
       entityId: inspectionId,
       action: "deleted",
-      changes: { inspectionType: existing.inspectionType, date: existing.date },
+      changes: { vehicleId: existing.vehicleId, inspectionType: existing.inspectionType, date: existing.date },
       performedBy: user.id,
     });
 

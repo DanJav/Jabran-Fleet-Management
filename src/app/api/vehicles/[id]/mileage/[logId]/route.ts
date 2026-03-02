@@ -81,6 +81,7 @@ export async function PATCH(
       entityId: logId,
       action: "updated",
       changes: {
+        vehicleId: existing.vehicleId,
         old: { mileage: existing.mileage },
         new: parsed.data,
       },
@@ -125,6 +126,7 @@ export async function DELETE(
       entityId: logId,
       action: "deleted",
       changes: {
+        vehicleId: existing.vehicleId,
         mileage: existing.mileage,
         loggedAt: existing.loggedAt,
       },

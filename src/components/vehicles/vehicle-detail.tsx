@@ -75,6 +75,15 @@ interface VehicleDetailProps {
   }[];
   allDrivers: { id: string; name: string }[];
   isAdmin: boolean;
+  changeLog: {
+    id: string;
+    entityType: string;
+    entityId: string;
+    action: string;
+    changes: unknown;
+    createdAt: Date;
+    performedByName: string | null;
+  }[];
 }
 
 export function VehicleDetail({
@@ -86,6 +95,7 @@ export function VehicleDetail({
   vehicleNotes,
   allDrivers,
   isAdmin,
+  changeLog,
 }: VehicleDetailProps) {
   const router = useRouter();
   const [togglingActive, setTogglingActive] = useState(false);
@@ -377,11 +387,42 @@ export function VehicleDetail({
           {(() => {
             type TimelineEvent = {
               id: string;
-              type: "service" | "inspection" | "mileage" | "note";
+              type: "service" | "inspection" | "mileage" | "note" | "change";
               date: Date;
               title: string;
               detail: string;
             };
+
+            const entityTypeLabels: Record<string, string> = {
+              service_event: "Service",
+              inspection: "Besiktning",
+              mileage_log: "Mätaravläsning",
+            };
+
+            function formatChangeDetail(entry: typeof changeLog[number]): string {
+              const c = entry.changes as Record<string, unknown>;
+              if (entry.action === "deleted") {
+                if (entry.entityType === "service_event") return `Service ${c.serviceType} – ${c.date}, ${Number(c.mileageAtService).toLocaleString("sv-SE")} km`;
+                if (entry.entityType === "inspection") return `${c.inspectionType} – ${c.date}`;
+                if (entry.entityType === "mileage_log") return `${Number(c.mileage).toLocaleString("sv-SE")} km`;
+                return "";
+              }
+              // action === "updated"
+              const oldData = (c.old ?? {}) as Record<string, unknown>;
+              const newData = (c.new ?? {}) as Record<string, unknown>;
+              const parts: string[] = [];
+              for (const key of Object.keys(newData)) {
+                const ov = oldData[key];
+                const nv = newData[key];
+                if (ov !== undefined && ov !== nv) {
+                  const label = key === "mileageAtService" || key === "mileage" ? "km" : key === "costSek" ? "kr" : key;
+                  const fmtOld = typeof ov === "number" ? ov.toLocaleString("sv-SE") : String(ov ?? "—");
+                  const fmtNew = typeof nv === "number" ? nv.toLocaleString("sv-SE") : String(nv ?? "—");
+                  parts.push(`${label}: ${fmtOld} → ${fmtNew}`);
+                }
+              }
+              return parts.length > 0 ? parts.join(", ") : "Uppdaterad";
+            }
 
             const events: TimelineEvent[] = [
               ...services.map((s) => ({
@@ -412,6 +453,13 @@ export function VehicleDetail({
                 title: n.tag === "issue" ? "Problem" : n.tag === "maintenance" ? "Underhåll" : "Anteckning",
                 detail: n.content.length > 80 ? n.content.slice(0, 80) + "\u2026" : n.content,
               })),
+              ...changeLog.map((entry) => ({
+                id: `change-${entry.id}`,
+                type: "change" as const,
+                date: new Date(entry.createdAt),
+                title: `${entry.action === "deleted" ? "Raderad" : "Ändrad"}: ${entityTypeLabels[entry.entityType] ?? entry.entityType}`,
+                detail: `${formatChangeDetail(entry)}${entry.performedByName ? ` · ${entry.performedByName}` : ""}`,
+              })),
             ];
 
             events.sort((a, b) => b.date.getTime() - a.date.getTime());
@@ -426,6 +474,7 @@ export function VehicleDetail({
               inspection: "bg-violet-100 text-violet-700",
               mileage: "bg-gray-100 text-gray-700",
               note: "bg-amber-100 text-amber-700",
+              change: "bg-orange-100 text-orange-700",
             };
 
             const typeLabels: Record<string, string> = {
@@ -433,6 +482,7 @@ export function VehicleDetail({
               inspection: "Besikt.",
               mileage: "Mätare",
               note: "Notering",
+              change: "Ändring",
             };
 
             return (
