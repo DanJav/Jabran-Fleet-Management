@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./top-bar";
 import { SearchModal } from "./search-modal";
+import { cn } from "@/lib/utils";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -28,7 +29,7 @@ export function DashboardShell({ children, userRole, userName }: DashboardShellP
       />
       <TopBar onSearchOpen={openSearch} sidebarCollapsed={collapsed} />
       <SearchModal open={searchOpen} onClose={closeSearch} />
-      <main className="lg:pl-60 transition-all duration-200">
+      <main className={cn(collapsed ? "lg:pl-16" : "lg:pl-60", "transition-all duration-200")}>
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 pt-20 lg:pt-20">
           {children}
         </div>
