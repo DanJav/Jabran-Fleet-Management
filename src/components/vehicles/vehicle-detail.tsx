@@ -192,6 +192,95 @@ export function VehicleDetail({
         )}
       </div>
 
+      {/* Unified timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Tidslinje</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            type TimelineEvent = {
+              id: string;
+              type: "service" | "inspection" | "mileage" | "note";
+              date: Date;
+              title: string;
+              detail: string;
+            };
+
+            const events: TimelineEvent[] = [
+              ...services.map((s) => ({
+                id: s.id,
+                type: "service" as const,
+                date: new Date(s.date),
+                title: `Service ${s.serviceType}`,
+                detail: `${s.mileageAtService.toLocaleString("sv-SE")} km${s.performedBy ? ` · ${s.performedBy}` : ""}`,
+              })),
+              ...inspections.map((i) => ({
+                id: i.id,
+                type: "inspection" as const,
+                date: new Date(i.date),
+                title: i.inspectionType === "besiktning" ? "Besiktning" : i.inspectionType === "taxameter" ? "Taxameter" : "SUFT",
+                detail: i.result === "approved" ? "Godkänd" : i.result === "failed" ? "Underkänd" : i.result === "approved_with_notes" ? "Godkänd m. anm." : "",
+              })),
+              ...mileageHistory.map((m) => ({
+                id: m.id,
+                type: "mileage" as const,
+                date: new Date(m.loggedAt),
+                title: "Mätaravläsning",
+                detail: `${m.mileage.toLocaleString("sv-SE")} km`,
+              })),
+              ...vehicleNotes.map((n) => ({
+                id: n.id,
+                type: "note" as const,
+                date: new Date(n.createdAt),
+                title: n.tag === "issue" ? "Problem" : n.tag === "maintenance" ? "Underhåll" : "Anteckning",
+                detail: n.content.length > 80 ? n.content.slice(0, 80) + "\u2026" : n.content,
+              })),
+            ];
+
+            events.sort((a, b) => b.date.getTime() - a.date.getTime());
+            const recent = events.slice(0, 20);
+
+            if (recent.length === 0) {
+              return <p className="text-sm text-gray-500">Ingen aktivitet registrerad</p>;
+            }
+
+            const typeStyles: Record<string, string> = {
+              service: "bg-blue-100 text-blue-700",
+              inspection: "bg-violet-100 text-violet-700",
+              mileage: "bg-gray-100 text-gray-700",
+              note: "bg-amber-100 text-amber-700",
+            };
+
+            const typeLabels: Record<string, string> = {
+              service: "Service",
+              inspection: "Besikt.",
+              mileage: "Mätare",
+              note: "Notering",
+            };
+
+            return (
+              <div className="space-y-3">
+                {recent.map((event) => (
+                  <div key={`${event.type}-${event.id}`} className="flex items-start gap-3">
+                    <span className={`text-[11px] rounded-md px-1.5 py-0.5 font-medium shrink-0 ${typeStyles[event.type]}`}>
+                      {typeLabels[event.type]}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[13px] font-medium text-gray-900">{event.title}</p>
+                        <span className="text-[11px] text-gray-400 shrink-0 ml-2">{formatDate(event.date)}</span>
+                      </div>
+                      <p className="text-[12px] text-gray-500 truncate">{event.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
       {/* Vehicle details card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
