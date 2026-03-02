@@ -103,7 +103,7 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm">
+            <Button size="sm" suppressHydrationWarning>
               <Plus className="h-4 w-4 mr-1" />
               Lägg till
             </Button>
