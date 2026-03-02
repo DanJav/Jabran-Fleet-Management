@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   ChevronLeft,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -27,6 +28,7 @@ const adminNavItems: NavItem[] = [
   { label: "Översikt", href: "/dashboard", icon: LayoutDashboard },
   { label: "Fordon", href: "/vehicles", icon: Car },
   { label: "Förare", href: "/drivers", icon: Users },
+  { label: "Inställningar", href: "/settings", icon: Settings },
 ];
 
 interface SidebarProps {

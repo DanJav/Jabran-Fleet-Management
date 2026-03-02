@@ -146,6 +146,25 @@ export const activityLog = pgTable("activity_log", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Settings (singleton row for app config)
+export const settings = pgTable("settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  companyName: varchar("company_name", { length: 200 }).default("").notNull(),
+  notifyEmailEnabled: boolean("notify_email_enabled").default(false).notNull(),
+  notifyEmail: varchar("notify_email", { length: 200 }),
+  // Mileage thresholds (km remaining)
+  thresholdServiceWarning: integer("threshold_service_warning").default(3000).notNull(),
+  thresholdServiceCritical: integer("threshold_service_critical").default(1000).notNull(),
+  // Date thresholds (days remaining)
+  thresholdInspectionWarning: integer("threshold_inspection_warning").default(30).notNull(),
+  thresholdInspectionCritical: integer("threshold_inspection_critical").default(14).notNull(),
+  // Email digest frequency
+  emailDigestFrequency: varchar("email_digest_frequency", { length: 20 }).default("weekly").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type Settings = typeof settings.$inferSelect;
+
 // Type exports
 export type Vehicle = typeof vehicles.$inferSelect;
 export type NewVehicle = typeof vehicles.$inferInsert;
