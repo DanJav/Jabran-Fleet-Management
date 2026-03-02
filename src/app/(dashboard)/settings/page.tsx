@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -12,17 +12,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Save } from "lucide-react";
 
 interface SettingsData {
   companyName: string;
+  organisationsnummer: string;
+  contactEmail: string | null;
+  serviceIntervalA: number;
+  serviceIntervalB: number;
   notifyEmailEnabled: boolean;
+  notifyOverdueService: boolean;
   notifyEmail: string | null;
-  thresholdServiceWarning: number;
-  thresholdServiceCritical: number;
-  thresholdInspectionWarning: number;
-  thresholdInspectionCritical: number;
+  warningThresholdDays: number;
   emailDigestFrequency: string;
+  language: string;
+}
+
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-4">
+      {label}
+    </p>
+  );
+}
+
+function SettingCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+      {children}
+    </div>
+  );
+}
+
+function ToggleRow({
+  label,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0 border-b border-gray-50 last:border-0">
+      <div>
+        <p className="text-[13px] font-medium text-gray-900">{label}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">{description}</p>
+      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
+  );
 }
 
 export default function SettingsPage() {
@@ -48,14 +88,12 @@ export default function SettingsPage() {
     if (!settings) return;
     setSaving(true);
     setMessage(null);
-
     try {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
-
       if (res.ok) {
         setMessage({ type: "success", text: "Inställningar sparade" });
       } else {
@@ -65,19 +103,19 @@ export default function SettingsPage() {
     } catch {
       setMessage({ type: "error", text: "Nätverksfel" });
     }
-
     setSaving(false);
   };
 
+  const patch = (partial: Partial<SettingsData>) =>
+    setSettings((s) => s && { ...s, ...partial });
+
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
-            Inställningar
-          </h1>
-          <p className="text-[13px] text-gray-500 mt-1">Laddar...</p>
-        </div>
+      <div>
+        <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
+          Inställningar
+        </h1>
+        <p className="text-[13px] text-gray-500 mt-1">Laddar...</p>
       </div>
     );
   }
@@ -85,20 +123,14 @@ export default function SettingsPage() {
   if (!settings) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
-            Inställningar
-          </h1>
-          <p className="text-[13px] text-gray-500 mt-1">
-            Konfigurera tröskelvärden och e-postnotifieringar
-          </p>
-        </div>
-        <Button onClick={handleSave} disabled={saving}>
-          <Save className="h-4 w-4 mr-1" />
-          {saving ? "Sparar..." : "Spara"}
-        </Button>
+    <div className="space-y-4 max-w-2xl">
+      <div>
+        <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
+          Inställningar
+        </h1>
+        <p className="text-[13px] text-gray-500 mt-1">
+          Hantera systemkonfiguration
+        </p>
       </div>
 
       {message && (
@@ -113,161 +145,133 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Company info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Företagsinformation</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+      {/* Företagsuppgifter */}
+      <SettingCard>
+        <SectionHeader label="Företagsuppgifter" />
+        <div className="space-y-4">
+          <div className="space-y-1.5">
             <Label>Företagsnamn</Label>
             <Input
               value={settings.companyName}
-              onChange={(e) =>
-                setSettings({ ...settings, companyName: e.target.value })
-              }
+              onChange={(e) => patch({ companyName: e.target.value })}
               placeholder="Mitt taxibolag AB"
             />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Notification thresholds */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">
-            Tröskelvärden för varningar
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-[12px] text-gray-500">
-            Styr när fordon markeras som &quot;snart&quot; (gul) eller
-            &quot;kritisk&quot; (röd) på instrumentpanelen.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Service varning (km kvar)</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Organisationsnummer</Label>
               <Input
-                type="number"
-                value={settings.thresholdServiceWarning}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    thresholdServiceWarning: parseInt(e.target.value) || 0,
-                  })
-                }
-                min={0}
+                value={settings.organisationsnummer}
+                onChange={(e) => patch({ organisationsnummer: e.target.value })}
+                placeholder="556123-4567"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Service kritisk (km kvar)</Label>
+            <div className="space-y-1.5">
+              <Label>Kontakt-e-post</Label>
               <Input
-                type="number"
-                value={settings.thresholdServiceCritical}
+                type="email"
+                value={settings.contactEmail || ""}
                 onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    thresholdServiceCritical: parseInt(e.target.value) || 0,
-                  })
+                  patch({ contactEmail: e.target.value || null })
                 }
-                min={0}
+                placeholder="admin@taxifleet.se"
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Besiktning varning (dagar kvar)</Label>
-              <Input
-                type="number"
-                value={settings.thresholdInspectionWarning}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    thresholdInspectionWarning: parseInt(e.target.value) || 0,
-                  })
-                }
-                min={0}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Besiktning kritisk (dagar kvar)</Label>
-              <Input
-                type="number"
-                value={settings.thresholdInspectionCritical}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    thresholdInspectionCritical: parseInt(e.target.value) || 0,
-                  })
-                }
-                min={0}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </SettingCard>
 
-      {/* Email notifications */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">E-postnotifieringar</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="emailEnabled"
-              checked={settings.notifyEmailEnabled}
+      {/* Serviceintervall */}
+      <SettingCard>
+        <SectionHeader label="Serviceintervall" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Service A intervall (km)</Label>
+            <Input
+              type="number"
+              value={settings.serviceIntervalA}
               onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  notifyEmailEnabled: e.target.checked,
-                })
+                patch({ serviceIntervalA: parseInt(e.target.value) || 0 })
               }
-              className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10"
+              min={0}
             />
-            <Label htmlFor="emailEnabled">
-              Aktivera e-postsammanfattning
-            </Label>
           </div>
+          <div className="space-y-1.5">
+            <Label>Service B intervall (km)</Label>
+            <Input
+              type="number"
+              value={settings.serviceIntervalB}
+              onChange={(e) =>
+                patch({ serviceIntervalB: parseInt(e.target.value) || 0 })
+              }
+              min={0}
+            />
+          </div>
+        </div>
+      </SettingCard>
 
-          {settings.notifyEmailEnabled && (
-            <>
-              <div className="space-y-2">
-                <Label>E-postadress för notifieringar</Label>
-                <Input
-                  type="email"
-                  value={settings.notifyEmail || ""}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      notifyEmail: e.target.value || null,
-                    })
-                  }
-                  placeholder="admin@example.se"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Frekvens</Label>
-                <Select
-                  value={settings.emailDigestFrequency}
-                  onValueChange={(v) =>
-                    setSettings({ ...settings, emailDigestFrequency: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Dagligen</SelectItem>
-                    <SelectItem value="weekly">Veckovis</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      {/* Notifieringar */}
+      <SettingCard>
+        <SectionHeader label="Notifieringar" />
+        <ToggleRow
+          label="E-postnotifieringar"
+          description="Daglig sammanfattning av kommande deadlines"
+          checked={settings.notifyEmailEnabled}
+          onCheckedChange={(v) => patch({ notifyEmailEnabled: v })}
+        />
+        <ToggleRow
+          label="Varning vid försenad service"
+          description="Omedelbar notifiering vid försenad kontroll"
+          checked={settings.notifyOverdueService}
+          onCheckedChange={(v) => patch({ notifyOverdueService: v })}
+        />
+        <div className="pt-4 space-y-1.5">
+          <Label>Varningströskel (dagar)</Label>
+          <Select
+            value={String(settings.warningThresholdDays)}
+            onValueChange={(v) =>
+              patch({ warningThresholdDays: parseInt(v) })
+            }
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="14">14 dagar</SelectItem>
+              <SelectItem value="30">30 dagar</SelectItem>
+              <SelectItem value="60">60 dagar</SelectItem>
+              <SelectItem value="90">90 dagar</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </SettingCard>
+
+      {/* Språk & Format */}
+      <SettingCard>
+        <SectionHeader label="Språk & Format" />
+        <div className="space-y-1.5">
+          <Label>Språk</Label>
+          <Select
+            value={settings.language}
+            onValueChange={(v) => patch({ language: v })}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sv">Svenska</SelectItem>
+              <SelectItem value="en">English</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </SettingCard>
+
+      {/* Save */}
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? "Sparar..." : "Spara inställningar"}
+        </Button>
+      </div>
     </div>
   );
 }
