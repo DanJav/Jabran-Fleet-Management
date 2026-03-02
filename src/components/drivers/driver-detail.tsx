@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { formatDate } from "@/lib/utils";
 import type { Driver } from "@/db/schema";
 
@@ -108,6 +115,16 @@ export function DriverDetail({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingDriver, setDeletingDriver] = useState(false);
+
+  const handleDelete = async () => {
+    setDeletingDriver(true);
+    const res = await fetch(`/api/drivers/${driver.id}`, { method: "DELETE" });
+    setDeletingDriver(false);
+    if (res.ok) router.push("/drivers");
+  };
 
   const [newPassword, setNewPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -197,9 +214,19 @@ export function DriverDetail({
             <p className="text-[13px] text-gray-500">{driver.email}</p>
           </div>
         </div>
-        <Badge variant={driver.isActive ? "success" : "default"}>
-          {driver.isActive ? "Aktiv" : "Inaktiv"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={driver.isActive ? "success" : "default"}>
+            {driver.isActive ? "Aktiv" : "Inaktiv"}
+          </Badge>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -497,6 +524,25 @@ export function DriverDetail({
           )}
         </div>
       )}
+      {/* Delete confirmation dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Radera förare</DialogTitle>
+            <DialogDescription>
+              Är du säker på att du vill radera <strong>{driver.name}</strong>? Detta går inte att ångra och kontot tas bort permanent.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Avbryt
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deletingDriver}>
+              {deletingDriver ? "Raderar..." : "Radera förare"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
