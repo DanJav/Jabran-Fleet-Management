@@ -11,6 +11,7 @@ import {
   UserPlus,
   MessageSquare,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,6 +148,82 @@ export function VehicleDetail({
     });
     setSavingTaxameter(false);
     setShowTaxameterEdit(false);
+    router.refresh();
+  };
+
+  // Edit/delete state for history records
+  const [editingService, setEditingService] = useState<ServiceEvent | null>(null);
+  const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
+  const [editingMileage, setEditingMileage] = useState<MileageLog | null>(null);
+  const [deletingRecord, setDeletingRecord] = useState<{ type: "service" | "inspection" | "mileage"; id: string; label: string } | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [svcForm, setSvcForm] = useState({ serviceType: "A" as "A" | "B", date: "", mileageAtService: "", performedBy: "", costSek: "", notes: "" });
+  const [insForm, setInsForm] = useState({ inspectionType: "besiktning" as "besiktning" | "taxameter" | "suft", date: "", result: "" as "" | "approved" | "approved_with_notes" | "failed", performedBy: "", notes: "", avvikelse: "" });
+  const [mlgForm, setMlgForm] = useState({ mileage: "", notes: "" });
+
+  const openEditService = (s: ServiceEvent) => {
+    setSvcForm({ serviceType: s.serviceType, date: s.date, mileageAtService: s.mileageAtService.toString(), performedBy: s.performedBy ?? "", costSek: s.costSek ?? "", notes: s.notes ?? "" });
+    setEditingService(s);
+  };
+  const handleSaveService = async () => {
+    if (!editingService) return;
+    setSavingEdit(true);
+    await fetch(`/api/vehicles/${vehicle.id}/services/${editingService.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ serviceType: svcForm.serviceType, date: svcForm.date, mileageAtService: parseInt(svcForm.mileageAtService), performedBy: svcForm.performedBy || undefined, costSek: svcForm.costSek ? parseFloat(svcForm.costSek) : undefined, notes: svcForm.notes || undefined }),
+    });
+    setSavingEdit(false);
+    setEditingService(null);
+    router.refresh();
+  };
+
+  const openEditInspection = (i: Inspection) => {
+    setInsForm({ inspectionType: i.inspectionType, date: i.date, result: (i.result ?? "") as typeof insForm.result, performedBy: i.performedBy ?? "", notes: i.notes ?? "", avvikelse: i.avvikelse ?? "" });
+    setEditingInspection(i);
+  };
+  const handleSaveInspection = async () => {
+    if (!editingInspection) return;
+    setSavingEdit(true);
+    await fetch(`/api/vehicles/${vehicle.id}/inspections/${editingInspection.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inspectionType: insForm.inspectionType, date: insForm.date, result: insForm.result || undefined, performedBy: insForm.performedBy || undefined, notes: insForm.notes || undefined, avvikelse: insForm.avvikelse || undefined }),
+    });
+    setSavingEdit(false);
+    setEditingInspection(null);
+    router.refresh();
+  };
+
+  const openEditMileage = (m: MileageLog) => {
+    setMlgForm({ mileage: m.mileage.toString(), notes: m.notes ?? "" });
+    setEditingMileage(m);
+  };
+  const handleSaveMileage = async () => {
+    if (!editingMileage) return;
+    setSavingEdit(true);
+    await fetch(`/api/vehicles/${vehicle.id}/mileage/${editingMileage.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mileage: parseInt(mlgForm.mileage), notes: mlgForm.notes || undefined }),
+    });
+    setSavingEdit(false);
+    setEditingMileage(null);
+    router.refresh();
+  };
+
+  const handleDeleteRecord = async () => {
+    if (!deletingRecord) return;
+    setConfirmingDelete(true);
+    const urlMap = {
+      service: `/api/vehicles/${vehicle.id}/services/${deletingRecord.id}`,
+      inspection: `/api/vehicles/${vehicle.id}/inspections/${deletingRecord.id}`,
+      mileage: `/api/vehicles/${vehicle.id}/mileage/${deletingRecord.id}`,
+    };
+    await fetch(urlMap[deletingRecord.type], { method: "DELETE" });
+    setConfirmingDelete(false);
+    setDeletingRecord(null);
     router.refresh();
   };
 
@@ -637,6 +714,7 @@ export function VehicleDetail({
                   <TableHead>Utförd av</TableHead>
                   <TableHead>Kostnad</TableHead>
                   <TableHead>Anteckning</TableHead>
+                  {isAdmin && <TableHead />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -656,6 +734,18 @@ export function VehicleDetail({
                     <TableCell className="text-gray-500 max-w-[200px] truncate">
                       {s.notes || "—"}
                     </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditService(s)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => setDeletingRecord({ type: "service", id: s.id, label: `Service ${s.serviceType} – ${s.date}` })}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -682,6 +772,7 @@ export function VehicleDetail({
                   <TableHead>Resultat</TableHead>
                   <TableHead>Utförd av</TableHead>
                   <TableHead>Avvikelse</TableHead>
+                  {isAdmin && <TableHead />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -721,6 +812,18 @@ export function VehicleDetail({
                     <TableCell className="text-gray-500 max-w-[200px] truncate">
                       {i.avvikelse || "—"}
                     </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditInspection(i)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => setDeletingRecord({ type: "inspection", id: i.id, label: `${i.inspectionType === "besiktning" ? "Besiktning" : i.inspectionType === "taxameter" ? "Taxameter" : "SUFT"} – ${i.date}` })}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -745,6 +848,7 @@ export function VehicleDetail({
                   <TableHead>Mätarst.</TableHead>
                   <TableHead>Källa</TableHead>
                   <TableHead>Anteckning</TableHead>
+                  {isAdmin && <TableHead />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -756,6 +860,18 @@ export function VehicleDetail({
                     </TableCell>
                     <TableCell>{m.source === "manual" ? "Manuell" : "API"}</TableCell>
                     <TableCell className="text-gray-500">{m.notes || "—"}</TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMileage(m)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => setDeletingRecord({ type: "mileage", id: m.id, label: `${m.mileage.toLocaleString("sv-SE")} km – ${formatDate(m.loggedAt)}` })}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -763,6 +879,139 @@ export function VehicleDetail({
           )}
         </CardContent>
       </Card>
+
+      {/* Edit service dialog */}
+      <Dialog open={!!editingService} onOpenChange={(o) => { if (!o) setEditingService(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Redigera service</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Typ</Label>
+              <Select value={svcForm.serviceType} onValueChange={(v) => setSvcForm((f) => ({ ...f, serviceType: v as "A" | "B" }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A">Service A</SelectItem>
+                  <SelectItem value="B">Service B</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Datum</Label>
+              <Input type="date" value={svcForm.date} onChange={(e) => setSvcForm((f) => ({ ...f, date: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Mätarställning (km)</Label>
+              <Input type="number" value={svcForm.mileageAtService} onChange={(e) => setSvcForm((f) => ({ ...f, mileageAtService: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Utförd av</Label>
+              <Input value={svcForm.performedBy} onChange={(e) => setSvcForm((f) => ({ ...f, performedBy: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Kostnad (SEK)</Label>
+              <Input type="number" value={svcForm.costSek} onChange={(e) => setSvcForm((f) => ({ ...f, costSek: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Anteckning</Label>
+              <Input value={svcForm.notes} onChange={(e) => setSvcForm((f) => ({ ...f, notes: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => setEditingService(null)}>Avbryt</Button>
+              <Button onClick={handleSaveService} disabled={savingEdit}>{savingEdit ? "Sparar..." : "Spara"}</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit inspection dialog */}
+      <Dialog open={!!editingInspection} onOpenChange={(o) => { if (!o) setEditingInspection(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Redigera besiktning</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Typ</Label>
+              <Select value={insForm.inspectionType} onValueChange={(v) => setInsForm((f) => ({ ...f, inspectionType: v as typeof insForm.inspectionType }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="besiktning">Besiktning</SelectItem>
+                  <SelectItem value="taxameter">Taxameter</SelectItem>
+                  <SelectItem value="suft">SUFT</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Datum</Label>
+              <Input type="date" value={insForm.date} onChange={(e) => setInsForm((f) => ({ ...f, date: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Resultat</Label>
+              <Select value={insForm.result} onValueChange={(v) => setInsForm((f) => ({ ...f, result: v as typeof insForm.result }))}>
+                <SelectTrigger><SelectValue placeholder="Välj resultat" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="approved">Godkänd</SelectItem>
+                  <SelectItem value="approved_with_notes">Godkänd m. anm.</SelectItem>
+                  <SelectItem value="failed">Underkänd</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Utförd av</Label>
+              <Input value={insForm.performedBy} onChange={(e) => setInsForm((f) => ({ ...f, performedBy: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Avvikelse</Label>
+              <Input value={insForm.avvikelse} onChange={(e) => setInsForm((f) => ({ ...f, avvikelse: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Anteckning</Label>
+              <Input value={insForm.notes} onChange={(e) => setInsForm((f) => ({ ...f, notes: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => setEditingInspection(null)}>Avbryt</Button>
+              <Button onClick={handleSaveInspection} disabled={savingEdit}>{savingEdit ? "Sparar..." : "Spara"}</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit mileage dialog */}
+      <Dialog open={!!editingMileage} onOpenChange={(o) => { if (!o) setEditingMileage(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Redigera mätarställning</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Mätarställning (km)</Label>
+              <Input type="number" value={mlgForm.mileage} onChange={(e) => setMlgForm((f) => ({ ...f, mileage: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Anteckning</Label>
+              <Input value={mlgForm.notes} onChange={(e) => setMlgForm((f) => ({ ...f, notes: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => setEditingMileage(null)}>Avbryt</Button>
+              <Button onClick={handleSaveMileage} disabled={savingEdit}>{savingEdit ? "Sparar..." : "Spara"}</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete record confirmation dialog */}
+      <Dialog open={!!deletingRecord} onOpenChange={(o) => { if (!o) setDeletingRecord(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Radera post</DialogTitle>
+            <DialogDescription>
+              Är du säker på att du vill radera <strong>{deletingRecord?.label}</strong>? Detta går inte att ångra.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setDeletingRecord(null)}>Avbryt</Button>
+            <Button variant="destructive" onClick={handleDeleteRecord} disabled={confirmingDelete}>
+              {confirmingDelete ? "Raderar..." : "Radera"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
