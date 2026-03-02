@@ -186,6 +186,7 @@ export function DriverDetail({
 
       {/* Overview Tab */}
       {activeTab === "overview" && (
+        <div className="space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">Förarinformation</CardTitle>
@@ -294,6 +295,7 @@ export function DriverDetail({
           </form>
         </CardContent>
       </Card>
+      </div>
       )}
 
       {/* Vehicles Tab */}
