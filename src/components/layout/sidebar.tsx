@@ -11,6 +11,7 @@ import {
   X,
   ChevronLeft,
   Settings,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -28,6 +29,7 @@ const adminNavItems: NavItem[] = [
   { label: "Översikt", href: "/dashboard", icon: LayoutDashboard },
   { label: "Fordon", href: "/vehicles", icon: Car },
   { label: "Förare", href: "/drivers", icon: Users },
+  { label: "Kvitton", href: "/receipts", icon: Receipt },
   { label: "Inställningar", href: "/settings", icon: Settings },
 ];
 
@@ -45,6 +47,7 @@ export function Sidebar({ userRole, userName, collapsed, onCollapsedChange }: Si
 
   const navItems = userRole === "admin" ? adminNavItems : [
     { label: "Mina fordon", href: "/dashboard", icon: Car },
+    { label: "Kvitton", href: "/receipts", icon: Receipt },
   ];
 
   const handleLogout = async () => {
