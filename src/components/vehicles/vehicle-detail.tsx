@@ -370,7 +370,7 @@ export function VehicleDetail({
         <CardHeader>
           <CardTitle className="text-sm">Servicehistorik</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 pl-2">
           {services.length === 0 ? (
             <p className="p-6 text-sm text-gray-500">Ingen service registrerad</p>
           ) : (
@@ -415,7 +415,7 @@ export function VehicleDetail({
         <CardHeader>
           <CardTitle className="text-sm">Besiktningshistorik</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 pl-2">
           {inspections.length === 0 ? (
             <p className="p-6 text-sm text-gray-500">Ingen besiktning registrerad</p>
           ) : (
@@ -480,7 +480,7 @@ export function VehicleDetail({
         <CardHeader>
           <CardTitle className="text-sm">Mätarhistorik</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 pl-2">
           {mileageHistory.length === 0 ? (
             <p className="p-6 text-sm text-gray-500">Ingen mätarställning registrerad</p>
           ) : (

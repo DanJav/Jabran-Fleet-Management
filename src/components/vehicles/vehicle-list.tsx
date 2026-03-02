@@ -68,9 +68,9 @@ export function VehicleList({ vehicles }: { vehicles: VehicleWithDriver[] }) {
                         <TableCell>
                           <Link
                             href={`/vehicles/${vehicle.id}`}
-                            className="font-medium text-gray-900 hover:text-violet-600"
+                            className="font-mono font-semibold tracking-wide text-gray-800 hover:text-violet-600"
                           >
-                            {vehicle.registrationNumber}
+                            {vehicle.registrationNumber.slice(0, 3)}{" "}{vehicle.registrationNumber.slice(3)}
                           </Link>
                         </TableCell>
                         <TableCell className="text-gray-600">{vehicle.make || "—"}</TableCell>
@@ -103,8 +103,8 @@ export function VehicleList({ vehicles }: { vehicles: VehicleWithDriver[] }) {
                     className="block p-4 hover:bg-gray-50"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-900">
-                        {vehicle.registrationNumber}
+                      <span className="font-mono font-semibold tracking-wide text-gray-800">
+                        {vehicle.registrationNumber.slice(0, 3)}{" "}{vehicle.registrationNumber.slice(3)}
                       </span>
                       <Badge variant={vehicle.isActive ? "success" : "default"}>
                         {vehicle.isActive ? "Aktiv" : "Inaktiv"}
