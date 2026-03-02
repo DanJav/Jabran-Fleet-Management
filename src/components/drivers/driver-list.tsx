@@ -80,14 +80,6 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
     router.refresh();
   };
 
-  const toggleActive = async (driverId: string, isActive: boolean) => {
-    await fetch(`/api/drivers/${driverId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: !isActive }),
-    });
-    router.refresh();
-  };
 
   return (
     <div className="space-y-6">
@@ -181,12 +173,15 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
                       <TableHead>Roll</TableHead>
                       <TableHead>Fordon</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {drivers.map((driver) => (
-                      <TableRow key={driver.id}>
+                      <TableRow
+                        key={driver.id}
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => router.push(`/drivers/${driver.id}`)}
+                      >
                         <TableCell className="font-medium">{driver.name}</TableCell>
                         <TableCell className="text-gray-500">{driver.email}</TableCell>
                         <TableCell className="text-gray-500">{driver.phone || "—"}</TableCell>
@@ -207,15 +202,6 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
                             {driver.isActive ? "Aktiv" : "Inaktiv"}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleActive(driver.id, driver.isActive)}
-                          >
-                            {driver.isActive ? "Inaktivera" : "Aktivera"}
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -225,7 +211,11 @@ export function DriverList({ drivers }: { drivers: DriverWithVehicles[] }) {
               {/* Mobile */}
               <div className="md:hidden divide-y divide-gray-100">
                 {drivers.map((driver) => (
-                  <div key={driver.id} className="p-4">
+                  <div
+                    key={driver.id}
+                    className="p-4 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                    onClick={() => router.push(`/drivers/${driver.id}`)}
+                  >
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-gray-900">{driver.name}</span>
                       <div className="flex gap-1">
