@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Car, AlertTriangle, Clock, CheckCircle } from "lucide-react";
+import { CarFront, CircleAlert, Clock, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/ui/status-dot";
@@ -39,13 +39,13 @@ export function DashboardContent({
       {!isDriver && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <SummaryCard
-            icon={Car}
+            icon={CarFront}
             label="Aktiva fordon"
             value={totalActive}
-            iconColor="text-violet-600"
+            iconColor="text-blue-600"
           />
           <SummaryCard
-            icon={AlertTriangle}
+            icon={CircleAlert}
             label="Försenade"
             value={overdueCount}
             iconColor="text-red-600"
@@ -96,7 +96,7 @@ export function DashboardContent({
                     <TableCell>
                       <Link
                         href={`/vehicles/${vehicle.id}`}
-                        className="font-medium text-gray-900 hover:text-violet-600"
+                        className="font-medium text-gray-900 hover:text-blue-600"
                       >
                         {vehicle.registrationNumber}
                       </Link>

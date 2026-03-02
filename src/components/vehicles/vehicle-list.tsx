@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Car } from "lucide-react";
+import { Plus, CarFront } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +33,7 @@ export function VehicleList({ vehicles }: { vehicles: VehicleWithDriver[] }) {
         <CardContent className="p-0">
           {vehicles.length === 0 ? (
             <EmptyState
-              icon={Car}
+              icon={CarFront}
               title="Inga fordon"
               description="Lägg till ditt första fordon för att komma igång."
               action={
@@ -68,7 +68,7 @@ export function VehicleList({ vehicles }: { vehicles: VehicleWithDriver[] }) {
                         <TableCell>
                           <Link
                             href={`/vehicles/${vehicle.id}`}
-                            className="font-medium text-gray-900 hover:text-violet-600"
+                            className="font-medium text-gray-900 hover:text-blue-600"
                           >
                             {vehicle.registrationNumber}
                           </Link>

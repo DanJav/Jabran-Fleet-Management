@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Car,
+  CarFront,
   Users,
   LogOut,
   Menu,
   X,
   ChevronLeft,
+  Waypoints,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -25,7 +26,7 @@ interface NavItem {
 
 const adminNavItems: NavItem[] = [
   { label: "Översikt", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Fordon", href: "/vehicles", icon: Car },
+  { label: "Fordon", href: "/vehicles", icon: CarFront },
   { label: "Förare", href: "/drivers", icon: Users },
 ];
 
@@ -41,7 +42,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = userRole === "admin" ? adminNavItems : [
-    { label: "Mina fordon", href: "/dashboard", icon: Car },
+    { label: "Mina fordon", href: "/dashboard", icon: CarFront },
   ];
 
   const handleLogout = async () => {
@@ -80,7 +81,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
         <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
           {!collapsed && (
             <Link href="/dashboard" className="flex items-center gap-2">
-              <Car className="h-5 w-5 text-violet-600" />
+              <Waypoints className="h-5 w-5 text-blue-600" />
               <span className="font-semibold text-gray-900 text-sm">TaxiFleet</span>
             </Link>
           )}

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Car } from "lucide-react";
+import { Waypoints } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -40,8 +40,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="rounded-xl bg-violet-50 p-3 mb-4 ring-1 ring-violet-200/50">
-            <Car className="h-5 w-5 text-violet-600" />
+          <div className="rounded-xl bg-blue-50 p-3 mb-4 ring-1 ring-blue-200/50">
+            <Waypoints className="h-5 w-5 text-blue-600" />
           </div>
           <h1 className="text-lg font-semibold text-gray-900 tracking-tight">TaxiFleet</h1>
           <p className="text-[13px] text-gray-500 mt-1">Logga in för att fortsätta</p>
