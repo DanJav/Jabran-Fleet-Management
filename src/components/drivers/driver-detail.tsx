@@ -44,7 +44,6 @@ interface PastAssignment extends CurrentAssignment {
 interface ActivityEntry {
   id: string;
   action: string;
-  changes: unknown;
   createdAt: Date;
   performedByName: string | null;
 }
@@ -76,6 +75,8 @@ export function DriverDetail({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const clearSuccess = () => setSaveSuccess(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,7 +177,7 @@ export function DriverDetail({
                 <Label>Namn</Label>
                 <Input
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => { setName(e.target.value); clearSuccess(); }}
                   required
                 />
               </div>
@@ -185,7 +186,7 @@ export function DriverDetail({
                 <Input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); clearSuccess(); }}
                   required
                 />
               </div>
@@ -193,13 +194,13 @@ export function DriverDetail({
                 <Label>Telefon</Label>
                 <Input
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => { setPhone(e.target.value); clearSuccess(); }}
                   placeholder="070-123 45 67"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Roll</Label>
-                <Select value={role} onValueChange={(v) => setRole(v as "admin" | "driver")}>
+                <Select value={role} onValueChange={(v) => { setRole(v as "admin" | "driver"); clearSuccess(); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -213,7 +214,7 @@ export function DriverDetail({
                 <Label>Status</Label>
                 <Select
                   value={isActive ? "active" : "inactive"}
-                  onValueChange={(v) => setIsActive(v === "active")}
+                  onValueChange={(v) => { setIsActive(v === "active"); clearSuccess(); }}
                 >
                   <SelectTrigger>
                     <SelectValue />

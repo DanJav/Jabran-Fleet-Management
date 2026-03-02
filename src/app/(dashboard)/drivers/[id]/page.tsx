@@ -64,7 +64,6 @@ export default async function DriverDetailPage({
     .select({
       id: activityLog.id,
       action: activityLog.action,
-      changes: activityLog.changes,
       createdAt: activityLog.createdAt,
       performedByName: drivers.name,
     })
