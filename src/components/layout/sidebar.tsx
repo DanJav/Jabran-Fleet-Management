@@ -34,12 +34,13 @@ const adminNavItems: NavItem[] = [
 interface SidebarProps {
   userRole: "admin" | "driver";
   userName: string;
+  collapsed: boolean;
+  onCollapsedChange: (v: boolean) => void;
 }
 
-export function Sidebar({ userRole, userName }: SidebarProps) {
+export function Sidebar({ userRole, userName, collapsed, onCollapsedChange }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = userRole === "admin" ? adminNavItems : [
@@ -89,7 +90,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
           <button
             onClick={() => {
               if (mobileOpen) setMobileOpen(false);
-              else setCollapsed(!collapsed);
+              else onCollapsedChange(!collapsed);
             }}
             className="rounded-lg p-1 hover:bg-gray-100 hidden lg:block"
           >
