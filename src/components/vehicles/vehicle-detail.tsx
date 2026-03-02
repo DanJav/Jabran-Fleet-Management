@@ -90,6 +90,65 @@ export function VehicleDetail({
   const [togglingActive, setTogglingActive] = useState(false);
   const [deletingVehicle, setDeletingVehicle] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showVehicleEdit, setShowVehicleEdit] = useState(false);
+  const [vehicleForm, setVehicleForm] = useState({
+    registrationNumber: vehicle.registrationNumber ?? "",
+    vin: vehicle.vin ?? "",
+    make: vehicle.make ?? "",
+    model: vehicle.model ?? "",
+    modelYear: vehicle.modelYear?.toString() ?? "",
+    color: vehicle.color ?? "",
+    fuelType: vehicle.fuelType ?? "",
+  });
+  const [savingVehicle, setSavingVehicle] = useState(false);
+
+  const handleSaveVehicle = async () => {
+    setSavingVehicle(true);
+    await fetch(`/api/vehicles/${vehicle.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        registrationNumber: vehicleForm.registrationNumber || undefined,
+        vin: vehicleForm.vin || null,
+        make: vehicleForm.make || null,
+        model: vehicleForm.model || null,
+        modelYear: vehicleForm.modelYear ? parseInt(vehicleForm.modelYear) : null,
+        color: vehicleForm.color || null,
+        fuelType: vehicleForm.fuelType || null,
+      }),
+    });
+    setSavingVehicle(false);
+    setShowVehicleEdit(false);
+    router.refresh();
+  };
+
+  const [showTaxameterEdit, setShowTaxameterEdit] = useState(false);
+  const [taxameterForm, setTaxameterForm] = useState({
+    equipmentType: vehicle.equipmentType ?? "none",
+    taxameterMake: vehicle.taxameterMake ?? "",
+    taxameterType: vehicle.taxameterType ?? "",
+    taxameterSerial: vehicle.taxameterSerial ?? "",
+    redovisningscentral: vehicle.redovisningscentral ?? "",
+  });
+  const [savingTaxameter, setSavingTaxameter] = useState(false);
+
+  const handleSaveTaxameter = async () => {
+    setSavingTaxameter(true);
+    await fetch(`/api/vehicles/${vehicle.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        equipmentType: taxameterForm.equipmentType,
+        taxameterMake: taxameterForm.taxameterMake || null,
+        taxameterType: taxameterForm.taxameterType || null,
+        taxameterSerial: taxameterForm.taxameterSerial || null,
+        redovisningscentral: taxameterForm.redovisningscentral || null,
+      }),
+    });
+    setSavingTaxameter(false);
+    setShowTaxameterEdit(false);
+    router.refresh();
+  };
 
   const handleToggleActive = async () => {
     setTogglingActive(true);
@@ -221,16 +280,14 @@ export function VehicleDetail({
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
         <LogMileageDialog vehicleId={vehicle.id} currentMileage={vehicle.currentMileage} />
+        <LogServiceDialog vehicleId={vehicle.id} currentMileage={vehicle.currentMileage} />
+        <LogInspectionDialog vehicleId={vehicle.id} />
         {isAdmin && (
-          <>
-            <LogServiceDialog vehicleId={vehicle.id} currentMileage={vehicle.currentMileage} />
-            <LogInspectionDialog vehicleId={vehicle.id} />
-            <AssignDriverDialog
-              vehicleId={vehicle.id}
-              allDrivers={allDrivers}
-              currentAssignments={assignments}
-            />
-          </>
+          <AssignDriverDialog
+            vehicleId={vehicle.id}
+            allDrivers={allDrivers}
+            currentAssignments={assignments}
+          />
         )}
       </div>
 
@@ -326,8 +383,13 @@ export function VehicleDetail({
       {/* Vehicle details card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm">Fordonsinformation</CardTitle>
+            {isAdmin && (
+              <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setShowVehicleEdit(true)}>
+                Redigera
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <DetailRow label="Reg.nr" value={vehicle.registrationNumber} />
@@ -344,9 +406,94 @@ export function VehicleDetail({
           </CardContent>
         </Card>
 
+        <Dialog open={showVehicleEdit} onOpenChange={setShowVehicleEdit}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Redigera fordonsinformation</DialogTitle>
+              <DialogDescription>Uppdatera grundläggande information om fordonet</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Reg.nr</Label>
+                  <Input
+                    value={vehicleForm.registrationNumber}
+                    onChange={(e) => setVehicleForm((f) => ({ ...f, registrationNumber: e.target.value }))}
+                    placeholder="ABC123"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>VIN</Label>
+                  <Input
+                    value={vehicleForm.vin}
+                    onChange={(e) => setVehicleForm((f) => ({ ...f, vin: e.target.value }))}
+                    placeholder="Chassinummer"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Fabrikat</Label>
+                  <Input
+                    value={vehicleForm.make}
+                    onChange={(e) => setVehicleForm((f) => ({ ...f, make: e.target.value }))}
+                    placeholder="t.ex. Volvo"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Modell</Label>
+                  <Input
+                    value={vehicleForm.model}
+                    onChange={(e) => setVehicleForm((f) => ({ ...f, model: e.target.value }))}
+                    placeholder="t.ex. V60"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Årsmodell</Label>
+                  <Input
+                    type="number"
+                    value={vehicleForm.modelYear}
+                    onChange={(e) => setVehicleForm((f) => ({ ...f, modelYear: e.target.value }))}
+                    placeholder="2024"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Färg</Label>
+                  <Input
+                    value={vehicleForm.color}
+                    onChange={(e) => setVehicleForm((f) => ({ ...f, color: e.target.value }))}
+                    placeholder="t.ex. Svart"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bränsle</Label>
+                  <Input
+                    value={vehicleForm.fuelType}
+                    onChange={(e) => setVehicleForm((f) => ({ ...f, fuelType: e.target.value }))}
+                    placeholder="t.ex. Bensin"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowVehicleEdit(false)}>Avbryt</Button>
+              <Button onClick={handleSaveVehicle} disabled={savingVehicle}>
+                {savingVehicle ? "Sparar…" : "Spara"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm">Taxameter / SUFT</CardTitle>
+            {isAdmin && (
+              <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setShowTaxameterEdit(true)}>
+                Redigera
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <DetailRow
@@ -359,6 +506,71 @@ export function VehicleDetail({
             <DetailRow label="Redovisningscentral" value={vehicle.redovisningscentral} />
           </CardContent>
         </Card>
+
+        <Dialog open={showTaxameterEdit} onOpenChange={setShowTaxameterEdit}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Redigera Taxameter / SUFT</DialogTitle>
+              <DialogDescription>Uppdatera utrustningsinformation för fordonet</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Utrustning</Label>
+                <Select
+                  value={taxameterForm.equipmentType}
+                  onValueChange={(v) => setTaxameterForm((f) => ({ ...f, equipmentType: v as "none" | "taxameter" | "suft" }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Ingen</SelectItem>
+                    <SelectItem value="taxameter">Taxameter</SelectItem>
+                    <SelectItem value="suft">SUFT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Fabrikat</Label>
+                <Input
+                  value={taxameterForm.taxameterMake}
+                  onChange={(e) => setTaxameterForm((f) => ({ ...f, taxameterMake: e.target.value }))}
+                  placeholder="t.ex. Hale"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Typ</Label>
+                <Input
+                  value={taxameterForm.taxameterType}
+                  onChange={(e) => setTaxameterForm((f) => ({ ...f, taxameterType: e.target.value }))}
+                  placeholder="Modellbeteckning"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Serienr</Label>
+                <Input
+                  value={taxameterForm.taxameterSerial}
+                  onChange={(e) => setTaxameterForm((f) => ({ ...f, taxameterSerial: e.target.value }))}
+                  placeholder="Serienummer"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Redovisningscentral</Label>
+                <Input
+                  value={taxameterForm.redovisningscentral}
+                  onChange={(e) => setTaxameterForm((f) => ({ ...f, redovisningscentral: e.target.value }))}
+                  placeholder="t.ex. Cabonline"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowTaxameterEdit(false)}>Avbryt</Button>
+              <Button onClick={handleSaveTaxameter} disabled={savingTaxameter}>
+                {savingTaxameter ? "Sparar…" : "Spara"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Assigned drivers */}

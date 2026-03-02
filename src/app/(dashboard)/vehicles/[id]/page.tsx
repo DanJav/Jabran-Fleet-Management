@@ -23,6 +23,22 @@ export default async function VehicleDetailPage({
 
   if (!vehicle) notFound();
 
+  // Drivers can only access vehicles assigned to them
+  if (user.role !== "admin") {
+    const [assignment] = await db
+      .select({ id: vehicleAssignments.id })
+      .from(vehicleAssignments)
+      .where(
+        and(
+          eq(vehicleAssignments.vehicleId, id),
+          eq(vehicleAssignments.driverId, user.id),
+          isNull(vehicleAssignments.unassignedAt)
+        )
+      )
+      .limit(1);
+    if (!assignment) notFound();
+  }
+
   // Get service events
   const services = await db
     .select()

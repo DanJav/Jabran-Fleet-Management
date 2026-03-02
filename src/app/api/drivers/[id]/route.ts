@@ -113,7 +113,7 @@ export async function PATCH(
       performedBy: user.id,
     });
 
-    revalidateTag("drivers");
+    revalidateTag("drivers", "default");
     return NextResponse.json(updated);
   } catch (err) {
     console.error("[PATCH /api/drivers/[id]]", err);

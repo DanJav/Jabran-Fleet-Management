@@ -152,7 +152,7 @@ export async function PATCH(
       performedBy: user.id,
     });
 
-    revalidateTag("vehicles");
+    revalidateTag("vehicles", "default");
     return NextResponse.json(updated);
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -178,7 +178,7 @@ export async function DELETE(
 
     await db.delete(vehicles).where(eq(vehicles.id, id));
 
-    revalidateTag("vehicles");
+    revalidateTag("vehicles", "default");
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
