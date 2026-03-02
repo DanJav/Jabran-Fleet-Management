@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { db } from "@/db";
 import { vehicleAssignments, activityLog } from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
@@ -66,6 +67,8 @@ export async function POST(request: NextRequest) {
       performedBy: user.id,
     });
 
+    revalidateTag("vehicles", "default");
+    revalidateTag("drivers", "default");
     return NextResponse.json(assignment, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -108,6 +111,8 @@ export async function DELETE(request: NextRequest) {
       performedBy: user.id,
     });
 
+    revalidateTag("vehicles", "default");
+    revalidateTag("drivers", "default");
     return NextResponse.json(updated);
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

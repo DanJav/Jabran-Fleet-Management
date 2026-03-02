@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { db } from "@/db";
 import { drivers, activityLog } from "@/db/schema";
 import { desc } from "drizzle-orm";
@@ -121,6 +122,7 @@ export async function POST(request: NextRequest) {
       performedBy: user.id,
     });
 
+    revalidateTag("drivers", "default");
     return NextResponse.json(driver, { status: 201 });
   } catch {
     return NextResponse.json(

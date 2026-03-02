@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { db } from "@/db";
 import { drivers, activityLog } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -106,6 +107,7 @@ export async function PATCH(
       performedBy: user.id,
     });
 
+    revalidateTag("drivers", "default");
     return NextResponse.json(updated);
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

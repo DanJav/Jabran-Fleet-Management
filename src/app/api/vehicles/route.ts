@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { db } from "@/db";
 import { vehicles, activityLog } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
       performedBy: user.id,
     });
 
+    revalidateTag("vehicles", "default");
     return NextResponse.json(vehicle, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

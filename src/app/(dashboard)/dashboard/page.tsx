@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { db } from "@/db";
 import { vehicles, serviceEvents, inspections, vehicleAssignments, drivers } from "@/db/schema";
 import { eq, desc, isNull, and, inArray } from "drizzle-orm";
@@ -28,14 +29,32 @@ export type VehicleWithStatus = {
   worstStatus: ServiceStatus;
 };
 
+const getDashboardData = unstable_cache(
+  async () => {
+    const allVehicles = await db.select().from(vehicles).orderBy(vehicles.registrationNumber);
+    const vehicleIds = allVehicles.map((v) => v.id);
+    if (vehicleIds.length === 0) return { allVehicles, allServices: [], allInspections: [], allAssignments: [] };
+    const [allServices, allInspections, allAssignments] = await Promise.all([
+      db.select().from(serviceEvents).where(inArray(serviceEvents.vehicleId, vehicleIds)).orderBy(desc(serviceEvents.mileageAtService)),
+      db.select().from(inspections).where(inArray(inspections.vehicleId, vehicleIds)).orderBy(desc(inspections.date)),
+      db.select({ vehicleId: vehicleAssignments.vehicleId, driverId: vehicleAssignments.driverId, isPrimary: vehicleAssignments.isPrimary, driverName: drivers.name })
+        .from(vehicleAssignments)
+        .innerJoin(drivers, eq(vehicleAssignments.driverId, drivers.id))
+        .where(and(inArray(vehicleAssignments.vehicleId, vehicleIds), isNull(vehicleAssignments.unassignedAt))),
+    ]);
+    return { allVehicles, allServices, allInspections, allAssignments };
+  },
+  ["dashboard-data"],
+  { revalidate: 30, tags: ["vehicles", "drivers"] }
+);
+
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   const isDriver = user.role === "driver";
 
-  // Single query to get all vehicles
-  const allVehicles = await db.select().from(vehicles).orderBy(vehicles.registrationNumber);
+  const { allVehicles, allServices, allInspections, allAssignments } = await getDashboardData();
   const vehicleIds = allVehicles.map((v) => v.id);
 
   if (vehicleIds.length === 0) {
@@ -50,35 +69,6 @@ export default async function DashboardPage() {
       />
     );
   }
-
-  // Batch-fetch all related data in parallel (4 queries instead of 5*N)
-  const [allServices, allInspections, allAssignments] = await Promise.all([
-    db
-      .select()
-      .from(serviceEvents)
-      .where(inArray(serviceEvents.vehicleId, vehicleIds))
-      .orderBy(desc(serviceEvents.mileageAtService)),
-    db
-      .select()
-      .from(inspections)
-      .where(inArray(inspections.vehicleId, vehicleIds))
-      .orderBy(desc(inspections.date)),
-    db
-      .select({
-        vehicleId: vehicleAssignments.vehicleId,
-        driverId: vehicleAssignments.driverId,
-        isPrimary: vehicleAssignments.isPrimary,
-        driverName: drivers.name,
-      })
-      .from(vehicleAssignments)
-      .innerJoin(drivers, eq(vehicleAssignments.driverId, drivers.id))
-      .where(
-        and(
-          inArray(vehicleAssignments.vehicleId, vehicleIds),
-          isNull(vehicleAssignments.unassignedAt)
-        )
-      ),
-  ]);
 
   // Index by vehicleId for O(1) lookups
   const serviceAByVehicle = new Map<string, number>();
