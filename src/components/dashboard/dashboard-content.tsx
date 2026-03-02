@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Car, AlertTriangle, Clock, Calendar } from "lucide-react";
+import { Car, AlertTriangle, Clock, Calendar, Download, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/ui/status-dot";
@@ -76,13 +77,35 @@ export function DashboardContent({
         );
       })()}
       {/* Page header */}
-      <div>
-        <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
-          {isDriver ? "Mina fordon" : "Översikt"}
-        </h1>
-        <p className="text-[13px] text-gray-500 mt-1">
-          {isDriver ? "Status för dina tilldelade fordon" : "Fordonsflottans status"}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
+            {isDriver ? "Mina fordon" : "Översikt"}
+          </h1>
+          <p className="text-[13px] text-gray-500 mt-1">
+            {isDriver ? "Status för dina tilldelade fordon" : "Fordonsflottans status"}
+          </p>
+        </div>
+        {!isDriver && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.location.href = "/api/export/csv";
+              }}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Exportera CSV
+            </Button>
+            <Link href="/vehicles/import">
+              <Button variant="outline" size="sm">
+                <Upload className="h-4 w-4 mr-1" />
+                Importera
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Summary cards */}

@@ -193,7 +193,7 @@ export default function ImportPage() {
               {columns.map((col) => (
                 <Badge
                   key={col.original}
-                  variant={col.mapped ? "default" : "secondary"}
+                  variant={col.mapped ? "accent" : "default"}
                 >
                   {col.original}
                   {col.mapped ? ` -> ${col.mapped}` : " (ignorerad)"}
