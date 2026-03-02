@@ -655,6 +655,7 @@ function LogMileageDialog({
   const [open, setOpen] = useState(false);
   const [mileage, setMileage] = useState("");
   const [notes, setNotes] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -669,6 +670,7 @@ function LogMileageDialog({
       body: JSON.stringify({
         mileage: parseInt(mileage),
         notes: notes || undefined,
+        loggedAt: date,
       }),
     });
 
@@ -682,6 +684,7 @@ function LogMileageDialog({
     setOpen(false);
     setMileage("");
     setNotes("");
+    setDate(new Date().toISOString().split("T")[0]);
     setLoading(false);
     router.refresh();
   };
@@ -705,6 +708,16 @@ function LogMileageDialog({
           {error && (
             <p className="text-[13px] text-red-600 bg-red-50 rounded-lg px-3 py-2 ring-1 ring-red-200/60">{error}</p>
           )}
+          <div className="space-y-2">
+            <Label>Datum</Label>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              max={new Date().toISOString().split("T")[0]}
+              required
+            />
+          </div>
           <div className="space-y-2">
             <Label>Ny mätarställning (km)</Label>
             <Input

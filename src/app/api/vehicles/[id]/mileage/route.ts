@@ -9,6 +9,7 @@ import { z } from "zod";
 const logMileageSchema = z.object({
   mileage: z.number().int().positive(),
   notes: z.string().optional(),
+  loggedAt: z.string().optional(), // ISO date string e.g. "2026-03-01"
 });
 
 export async function POST(
@@ -62,6 +63,7 @@ export async function POST(
         loggedBy: user.id,
         source: "manual",
         notes: parsed.data.notes,
+        loggedAt: parsed.data.loggedAt ? new Date(parsed.data.loggedAt) : new Date(),
       })
       .returning();
 
