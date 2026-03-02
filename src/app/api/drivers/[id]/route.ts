@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/db";
-import { drivers, activityLog } from "@/db/schema";
+import {
+  drivers,
+  activityLog,
+  vehicleAssignments,
+  receipts,
+  mileageLogs,
+  serviceEvents,
+  inspections,
+  notes,
+} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -143,6 +152,17 @@ export async function DELETE(
       const supabaseAdmin = createAdminClient();
       await supabaseAdmin.auth.admin.deleteUser(existing.authUserId);
     }
+
+    // Clear nullable FK references to this driver
+    await db.update(activityLog).set({ performedBy: null }).where(eq(activityLog.performedBy, id));
+    await db.update(mileageLogs).set({ loggedBy: null }).where(eq(mileageLogs.loggedBy, id));
+    await db.update(serviceEvents).set({ createdBy: null }).where(eq(serviceEvents.createdBy, id));
+    await db.update(inspections).set({ createdBy: null }).where(eq(inspections.createdBy, id));
+    await db.update(notes).set({ authorId: null }).where(eq(notes.authorId, id));
+
+    // Delete records with NOT NULL FK references
+    await db.delete(receipts).where(eq(receipts.driverId, id));
+    await db.delete(vehicleAssignments).where(eq(vehicleAssignments.driverId, id));
 
     await db.delete(drivers).where(eq(drivers.id, id));
 
