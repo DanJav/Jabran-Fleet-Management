@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Car } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,13 +21,16 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
+    const email = identifier.includes("@")
+      ? identifier
+      : `${identifier}@fleet.local`;
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      setError("Felaktigt e-post eller lösenord");
+      setError("Felaktigt användarnamn/e-post eller lösenord");
       setLoading(false);
       return;
     }
@@ -50,13 +53,13 @@ export default function LoginPage() {
         <div className="rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm">
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">E-post</Label>
+              <Label htmlFor="identifier">Användarnamn eller e-post</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="din@email.se"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="identifier"
+                type="text"
+                placeholder="användarnamn eller din@email.se"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
                 autoFocus
               />
