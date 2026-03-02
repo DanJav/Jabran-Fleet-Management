@@ -118,12 +118,28 @@ export function DriverDetail({
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingDriver, setDeletingDriver] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   const handleDelete = async () => {
     setDeletingDriver(true);
     const res = await fetch(`/api/drivers/${driver.id}`, { method: "DELETE" });
     setDeletingDriver(false);
     if (res.ok) router.push("/drivers");
+  };
+
+  const handleDeactivate = async () => {
+    setDeactivating(true);
+    const res = await fetch(`/api/drivers/${driver.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: false }),
+    });
+    setDeactivating(false);
+    if (res.ok) {
+      setIsActive(false);
+      setShowDeleteConfirm(false);
+      router.refresh();
+    }
   };
 
   const [newPassword, setNewPassword] = useState("");
@@ -531,17 +547,20 @@ export function DriverDetail({
             <DialogTitle>Radera förare</DialogTitle>
             <DialogDescription>
               Är du säker på att du vill radera <strong>{driver.name}</strong>? Detta går inte att ångra och kontot tas bort permanent.
-              <br /><br />
-              Om du bara vill spärra åtkomsten kan du istället sätta föraren som <strong>Inaktiv</strong> under Förarinformation.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-              Avbryt
+          <div className="flex flex-col gap-2 pt-2">
+            <Button variant="outline" className="w-full" onClick={handleDeactivate} disabled={deactivating || !driver.isActive}>
+              {deactivating ? "Sparar..." : driver.isActive ? "Sätt som inaktiv istället" : "Föraren är redan inaktiv"}
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deletingDriver}>
-              {deletingDriver ? "Raderar..." : "Radera förare"}
-            </Button>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+                Avbryt
+              </Button>
+              <Button variant="destructive" onClick={handleDelete} disabled={deletingDriver}>
+                {deletingDriver ? "Raderar..." : "Radera förare"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
