@@ -124,7 +124,8 @@ export async function POST(request: NextRequest) {
 
     revalidateTag("drivers", "default");
     return NextResponse.json(driver, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error("[POST /api/drivers]", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
