@@ -531,6 +531,8 @@ export function DriverDetail({
             <DialogTitle>Radera förare</DialogTitle>
             <DialogDescription>
               Är du säker på att du vill radera <strong>{driver.name}</strong>? Detta går inte att ångra och kontot tas bort permanent.
+              <br /><br />
+              Om du bara vill spärra åtkomsten kan du istället sätta föraren som <strong>Inaktiv</strong> under Förarinformation.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 pt-2">
